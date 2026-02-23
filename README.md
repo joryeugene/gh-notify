@@ -35,7 +35,7 @@
 
 1. **Prereqs**: `gh`, `jq`, `tmux` — all via `brew install gh jq tmux`, plus `gh auth login`
 2. **Install**: `curl -fsSL https://raw.githubusercontent.com/joryeugene/gh-notify/main/install.sh | bash`
-3. **Launch**: Run `bash ~/.config/gh-notify/gh-notify-bar.sh` in any tmux pane
+3. **Launch**: `gh-notify` (in any tmux pane)
 
 > [!NOTE]
 > GitHub authentication is required. Run `gh auth login` before installing if you haven't already. The daemon uses `gh auth token` to authenticate API requests.
@@ -105,6 +105,14 @@ cp scripts/gh-notify-bar.sh    ~/.config/gh-notify/
 chmod +x ~/.config/gh-notify/*.sh
 echo "ON" > ~/.config/gh-notify/sfx-state
 touch ~/.config/gh-notify/events.log ~/.config/gh-notify/seen-ids
+
+# Install CLI command
+mkdir -p ~/.local/bin
+cat > ~/.local/bin/gh-notify << 'EOF'
+#!/usr/bin/env bash
+exec bash "${HOME}/.config/gh-notify/gh-notify-bar.sh" "$@"
+EOF
+chmod +x ~/.local/bin/gh-notify
 ```
 
 **Custom sesh integration:**
@@ -113,7 +121,7 @@ Add one line to your existing briefing script:
 
 ```bash
 # Replace your existing right-pane split with:
-tmux split-window -v -l 12% 'bash ~/.config/gh-notify/gh-notify-bar.sh'
+tmux split-window -v -l 12% 'gh-notify'
 tmux select-pane -t :.1
 ```
 
@@ -132,7 +140,7 @@ curl -s --max-time 3 "wttr.in?format=%l:+%c+%t+%w" 2>/dev/null || true
 printf '\033[0m\n'
 
 # Bottom pane: gh-notify bar (live PR notifications + daemon)
-tmux split-window -v -l 12% 'bash ~/.config/gh-notify/gh-notify-bar.sh'
+tmux split-window -v -l 12% 'gh-notify'
 
 # Top pane: gh-dash
 tmux select-pane -t :.1
@@ -142,7 +150,7 @@ exec gh dash
 **Run the bar in any tmux pane:**
 
 ```bash
-bash ~/.config/gh-notify/gh-notify-bar.sh
+gh-notify
 ```
 
 The bar automatically starts the daemon. When the bar exits, it kills the daemon.
@@ -184,7 +192,7 @@ Change `12%` in the `split-window` command to any percentage or fixed line count
 
 ```bash
 # 1. Launch the bar
-bash ~/.config/gh-notify/gh-notify-bar.sh
+gh-notify
 # Watching for GitHub notifications... (bottom pane)
 
 # 2. Test sound

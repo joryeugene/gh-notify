@@ -41,6 +41,24 @@ play_sound() {
     [[ "$sfx" == "ON" ]] && afplay "/System/Library/Sounds/${sound}" 2>/dev/null &
 }
 
+# ── batch state (reset each poll cycle) ─────────────────────────────────────
+BATCH_SOUND=""
+BATCH_COUNT=0
+BATCH_BEST_LABEL=""
+BATCH_BEST_REPO=""
+BATCH_BEST_TITLE=""
+
+# Priority: Hero > Glass > Ping > Tink
+queue_sound() {
+    local s="$1"
+    case "$s" in
+        Hero.aiff)  BATCH_SOUND="Hero.aiff" ;;
+        Glass.aiff) [[ "$BATCH_SOUND" != "Hero.aiff" ]] && BATCH_SOUND="Glass.aiff" ;;
+        Ping.aiff)  [[ "$BATCH_SOUND" == "Tink.aiff" || -z "$BATCH_SOUND" ]] && BATCH_SOUND="Ping.aiff" ;;
+        Tink.aiff)  [[ -z "$BATCH_SOUND" ]] && BATCH_SOUND="Tink.aiff" ;;
+    esac
+}
+
 send_notification() {
     local title="$1" subtitle="$2" message="$3"
     title="${title//\\/}"; title="${title//\"/\'}"
@@ -157,8 +175,13 @@ process_notification() {
     esac
 
     log_event "$event_icon" "$event_label" "$title" "$repo_name"
-    send_notification "GitHub: ${event_label}" "$repo_name" "$title"
-    play_sound "$sound"
+    queue_sound "$sound"
+    (( BATCH_COUNT++ )) || true
+    if [[ -z "$BATCH_BEST_LABEL" ]]; then
+        BATCH_BEST_LABEL="$event_label"
+        BATCH_BEST_REPO="$repo_name"
+        BATCH_BEST_TITLE="$title"
+    fi
 }
 
 # ── poll loop ─────────────────────────────────────────────────────────────────
@@ -199,12 +222,39 @@ while true; do
         continue
     fi
 
-    # Process each unread notification
+    # Reset batch accumulators
+    BATCH_SOUND=""
+    BATCH_COUNT=0
+    BATCH_BEST_LABEL=""
+    BATCH_BEST_REPO=""
+    BATCH_BEST_TITLE=""
+    unset batch_dedup
+    declare -A batch_dedup
+
     count=$(printf '%s\n' "$body" | jq 'length')
     for i in $(seq 0 $((count - 1))); do
         notif=$(printf '%s\n' "$body" | jq ".[${i}]")
+
+        # Within-batch dedup: collapse same repo+title (e.g. 20x skipped workflow runs)
+        batch_key=$(printf '%s' "$notif" | jq -r '"\(.repository.full_name):\(.subject.title)"')
+        if [[ -v batch_dedup["$batch_key"] ]]; then
+            dup_id=$(printf '%s' "$notif" | jq -r '.id // empty')
+            [[ -n "$dup_id" ]] && printf '%s\n' "$dup_id" >> "$SEEN_IDS"
+            continue
+        fi
+        batch_dedup["$batch_key"]=1
+
         process_notification "$notif"
     done
+
+    # Dispatch once for the whole batch: 1 sound, 1 popup
+    [[ -n "$BATCH_SOUND" ]] && play_sound "$BATCH_SOUND"
+    if [[ "$BATCH_COUNT" -eq 1 ]]; then
+        send_notification "GitHub: ${BATCH_BEST_LABEL}" "$BATCH_BEST_REPO" "$BATCH_BEST_TITLE"
+    elif [[ "$BATCH_COUNT" -gt 1 ]]; then
+        send_notification "GitHub: ${BATCH_COUNT} new notifications" \
+            "$BATCH_BEST_REPO" "${BATCH_BEST_TITLE} +$((BATCH_COUNT - 1)) more"
+    fi
 
     sleep 30
 done
