@@ -109,7 +109,31 @@ ok "State directory ready: ${STATE_DIR}"
 echo
 
 # -------------------------------------------------------------------
-# 3. Verify
+# 3. Install gh-notify CLI command
+# -------------------------------------------------------------------
+info "Installing gh-notify command..."
+
+BIN_DIR="${HOME}/.local/bin"
+mkdir -p "$BIN_DIR"
+
+cat > "${BIN_DIR}/gh-notify" << 'EOF'
+#!/usr/bin/env bash
+exec bash "${HOME}/.config/gh-notify/gh-notify-bar.sh" "$@"
+EOF
+chmod +x "${BIN_DIR}/gh-notify"
+
+ok "Installed: ${BIN_DIR}/gh-notify"
+
+# Warn if ~/.local/bin not in PATH
+if ! echo "$PATH" | tr ':' '\n' | grep -qF "$BIN_DIR"; then
+    warn "~/.local/bin is not in your PATH. Add to ~/.zshrc:"
+    warn "  export PATH=\"\${HOME}/.local/bin:\${PATH}\""
+fi
+
+echo
+
+# -------------------------------------------------------------------
+# 4. Verify
 # -------------------------------------------------------------------
 info "Verifying installation..."
 echo
@@ -158,7 +182,7 @@ if [[ "$VFAIL" -eq 0 ]]; then
     echo
     echo -e "  ${DIM}Test a sound:   afplay /System/Library/Sounds/Glass.aiff${RESET}"
     echo -e "  ${DIM}Test a popup:   osascript -e 'display notification \"Ready\" with title \"gh-notify\"'${RESET}"
-    echo -e "  ${DIM}Launch bar:     bash ~/.config/gh-notify/gh-notify-bar.sh${RESET}"
+    echo -e "  ${DIM}Launch:         gh-notify${RESET}"
 else
     warn "Installation completed with warnings above."
     echo -e "  ${DIM}Run manual checks to resolve issues.${RESET}"
