@@ -1,0 +1,201 @@
+# gh-notify
+
+<p align="center">
+  <a href="https://github.com/joryeugene/gh-notify/blob/main/LICENSE"><img src="https://img.shields.io/github/license/joryeugene/gh-notify.svg" alt="MIT License"></a>
+  <img src="https://img.shields.io/badge/platform-macOS-lightgrey.svg" alt="macOS">
+  <img src="https://img.shields.io/badge/requires-gh%20CLI-blue.svg" alt="requires gh CLI">
+  <img src="https://img.shields.io/badge/tmux-required-orange.svg" alt="tmux required">
+</p>
+
+<table><tr>
+<td>
+  <h3>Real-time GitHub PR notifications with macOS sounds</h3>
+  <p>Background daemon that polls GitHub every 30s, fires event-specific sounds and macOS popups, and streams a live log into a small tmux bottom bar. Run it in any tmux session as a persistent notification pane.</p>
+</td>
+<td align="center">
+<pre>
+┌─────────────────────────────────────────────────┐
+│                                                 │
+│              gh dash (full width)               │
+│                                                 │
+│   PRs  Issues  Repos  ...                       │
+│                                                 │
+├─────────────────────────────────────────────────┤
+│ [12:04] ✅ Approved by alice - Fix auth (org/r)  │
+│ [12:07] 💬 New comment - Add retry logic (o/r)  │
+│ [12:09] 🔀 Merged - Update deps (org/repo)      │
+│ ──────────────────────────────────────────────  │
+│  [s] sound (ON)  [c] clear  [q] quit            │
+└─────────────────────────────────────────────────┘
+</pre>
+</td>
+</tr></table>
+
+## TLDR
+
+1. **Prereqs**: `gh`, `jq`, `tmux` — all via `brew install gh jq tmux`, plus `gh auth login`
+2. **Install**: `curl -fsSL https://raw.githubusercontent.com/joryeugene/gh-notify/main/install.sh | bash`
+3. **Launch**: Run `bash ~/.config/gh-notify/gh-notify-bar.sh` in any tmux pane
+
+> [!NOTE]
+> GitHub authentication is required. Run `gh auth login` before installing if you haven't already. The daemon uses `gh auth token` to authenticate API requests.
+
+---
+
+## Events
+
+| Icon | Event | Trigger | Sound |
+|------|-------|---------|-------|
+| ✅ | Approved | Non-self APPROVED review on your PR | `Glass.aiff` |
+| 🔀 | Merged | Your PR was merged | `Hero.aiff` |
+| 💬 | New comment | Comment or mention on any thread | `Tink.aiff` |
+| 👀 | Review requested | You were asked to review | `Tink.aiff` |
+| 📌 | Assigned | Issue or PR assigned to you | `Ping.aiff` |
+| 🔔 | Activity | All other notification types | `Ping.aiff` |
+
+All sounds are built-in macOS system sounds. No dependencies beyond the prereqs.
+
+---
+
+## Keybinds
+
+| Key | Action |
+|-----|--------|
+| `s` | Toggle sound ON/OFF |
+| `c` | Clear the event log |
+| `q` | Quit bar (also stops daemon) |
+
+---
+
+## How It Works
+
+```mermaid
+flowchart TD
+    B[gh-notify-bar.sh] -->|spawns| C[gh-notify-daemon.sh]
+    C -->|curl -si with If-Modified-Since| D{GitHub /notifications}
+    D -->|304 Not Modified| E[sleep 30, skip]
+    D -->|200 OK + JSON| F[for each unseen ID]
+    F -->|check reason field| G{Event type?}
+    G -->|comment/mention| H[💬 Tink.aiff]
+    G -->|review_requested| I[👀 Tink.aiff]
+    G -->|assign| J[📌 Ping.aiff]
+    G -->|author + fetch PR| K{PR state?}
+    K -->|merged=true| L[🔀 Hero.aiff]
+    K -->|open + APPROVED| M[✅ Glass.aiff]
+    K -->|otherwise| N[🔔 Ping.aiff]
+    H & I & J & L & M & N -->|append| O[events.log]
+    H & I & J & L & M & N -->|osascript| P[macOS notification]
+    H & I & J & L & M & N -->|afplay| Q[Sound]
+    O -->|tail -8| R[bar display loop]
+```
+
+The daemon uses HTTP conditional requests (`If-Modified-Since` / `304 Not Modified`). GitHub's API returns 304 when the notification list hasn't changed since the last poll — these responses don't count against your rate limit.
+
+---
+
+<details>
+<summary><strong>Manual installation / custom sesh integration</strong></summary>
+
+**Without the installer:**
+
+```bash
+mkdir -p ~/.config/gh-notify
+cp scripts/gh-notify-daemon.sh ~/.config/gh-notify/
+cp scripts/gh-notify-bar.sh    ~/.config/gh-notify/
+chmod +x ~/.config/gh-notify/*.sh
+echo "ON" > ~/.config/gh-notify/sfx-state
+touch ~/.config/gh-notify/events.log ~/.config/gh-notify/seen-ids
+```
+
+**Custom sesh integration:**
+
+Add one line to your existing briefing script:
+
+```bash
+# Replace your existing right-pane split with:
+tmux split-window -v -l 12% 'bash ~/.config/gh-notify/gh-notify-bar.sh'
+tmux select-pane -t :.1
+```
+
+**Full sesh + gh-dash + gh-notify example:**
+
+```bash
+#!/usr/bin/env bash
+# Example: sesh briefing.sh with gh-notify bar
+# Drop into ~/.config/sesh/scripts/briefing.sh (or wherever your sesh script lives)
+
+tmux rename-window -t 1 "BRIEFING"
+
+# Weather (optional — remove if you don't use wttr.in)
+printf '\033[1;36m'
+curl -s --max-time 3 "wttr.in?format=%l:+%c+%t+%w" 2>/dev/null || true
+printf '\033[0m\n'
+
+# Bottom pane: gh-notify bar (live PR notifications + daemon)
+tmux split-window -v -l 12% 'bash ~/.config/gh-notify/gh-notify-bar.sh'
+
+# Top pane: gh-dash
+tmux select-pane -t :.1
+exec gh dash
+```
+
+**Run the bar in any tmux pane:**
+
+```bash
+bash ~/.config/gh-notify/gh-notify-bar.sh
+```
+
+The bar automatically starts the daemon. When the bar exits, it kills the daemon.
+
+</details>
+
+<details>
+<summary><strong>Configuration</strong></summary>
+
+**State files** — all in `~/.config/gh-notify/`:
+
+| File | Purpose |
+|------|---------|
+| `events.log` | Appended event lines displayed in the bar |
+| `sfx-state` | Contains `ON` or `OFF` — controls sound playback |
+| `seen-ids` | Newline-separated processed notification IDs (prevents duplicates) |
+
+**Poll interval:**
+
+Edit `gh-notify-daemon.sh` and change the `sleep 30` at the bottom of the loop. Minimum recommended: 15 seconds (GitHub rate limit is 5000 requests/hour; 304 responses don't count).
+
+**Sounds:**
+
+Edit the `case "$reason"` block in `gh-notify-daemon.sh` to swap any sound file. All built-in macOS sounds are in `/System/Library/Sounds/`. Test one with:
+
+```bash
+afplay /System/Library/Sounds/Glass.aiff
+```
+
+**Bar height:**
+
+Change `12%` in the `split-window` command to any percentage or fixed line count (e.g., `-l 10`).
+
+</details>
+
+---
+
+## Verification
+
+```bash
+# 1. Launch the bar
+bash ~/.config/gh-notify/gh-notify-bar.sh
+# Watching for GitHub notifications... (bottom pane)
+
+# 2. Test sound
+afplay /System/Library/Sounds/Glass.aiff
+
+# 3. Test popup
+osascript -e 'display notification "PR #42 approved" with title "GitHub: Approved" subtitle "org/repo"'
+
+# 4. Check daemon is running
+pgrep -f gh-notify-daemon && echo "daemon running"
+
+# 5. Live trigger
+# Open a draft PR, request a review, approve it — bar updates within 30s
+```
