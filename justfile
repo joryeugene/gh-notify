@@ -7,7 +7,17 @@ default:
 lint:
     shellcheck scripts/gh-notify-daemon.sh scripts/gh-notify-bar.sh install.sh
 
-# Run the installer locally (idempotent)
+# Copy scripts to ~/.config/gh-notify/ — fast dev deploy, no prereq checks
+# Use after any edit to scripts/; press [r] in the bar to reload
+sync:
+    @mkdir -p "${HOME}/.config/gh-notify"
+    @cp scripts/gh-notify-daemon.sh "${HOME}/.config/gh-notify/gh-notify-daemon.sh"
+    @cp scripts/gh-notify-bar.sh    "${HOME}/.config/gh-notify/gh-notify-bar.sh"
+    @chmod +x "${HOME}/.config/gh-notify/gh-notify-daemon.sh" \
+              "${HOME}/.config/gh-notify/gh-notify-bar.sh"
+    @echo "synced → ~/.config/gh-notify/  (press [r] in bar to reload)"
+
+# Full install: prereq checks, copy scripts, install CLI wrapper (first-time setup)
 install:
     bash install.sh
 
@@ -39,11 +49,17 @@ notes:
         git log --pretty="format:- %s" --reverse "${LAST_TAG}..HEAD"
     fi
 
-# Tag and push a release (creates GitHub release draft)
-# Update CHANGELOG.md [Unreleased] section first, then: just release 0.2.0
+# Tag and push a release: lints, syncs locally, tags, pushes, prints release URL
+# Prereq: CHANGELOG.md already updated for the version; commit all changes first
+# Usage: just release 0.6.0
 release version:
-    @echo "→ CHANGELOG.md updated for v{{version}}? (Ctrl-C to abort)"
-    @read -r _
+    @echo "→ Checking CHANGELOG.md has [{{version}}] entry..."
+    @grep -q "\[{{version}}\]" CHANGELOG.md || { echo "✗  [{{version}}] not found in CHANGELOG.md — update it first"; exit 1; }
+    @echo "→ Linting..."
+    @just lint
+    @echo "→ Syncing scripts to ~/.config/gh-notify/..."
+    @just sync
+    @echo "→ Tagging v{{version}}..."
     git tag -a "v{{version}}" -m "v{{version}}"
-    git push origin "v{{version}}"
-    @echo "Draft release at: https://github.com/joryeugene/gh-notify/releases/new?tag=v{{version}}"
+    git push origin main "v{{version}}"
+    @echo "→ Draft release: https://github.com/joryeugene/gh-notify/releases/new?tag=v{{version}}"
