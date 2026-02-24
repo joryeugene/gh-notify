@@ -11,6 +11,26 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.3.0] - 2026-02-23
+
+### Added
+- Daemon liveness check in bar: yellow `⚠ daemon offline` warning fires within 2s of crash
+- `[r]` keybind to restart the daemon from the bar without relaunching the session
+- `just uninstall` recipe to cleanly remove all installed files and state
+- Troubleshooting section in README covering the 5 most common failure modes
+- Uninstall section in README with `seen-ids` backup note
+
+### Changed
+- TLDR prerequisites moved before numbered steps as a runnable block (auth failure is now obvious before install)
+- Diagram surfaces `sfx-state` gate making the `[s]` sound toggle architecturally visible
+- Poll interval docs clarify default (30s) and minimum (15s) without contradicting each other
+
+### Fixed
+- `[r]` restart waits for old daemon's lock release before spawning (prevented silent spawn failure)
+- `just lint` SC2088 warning on `~/.local/bin` display string suppressed with inline comment
+
+---
+
 ## [0.2.0] - 2026-02-23
 
 ### Added
@@ -38,6 +58,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/joryeugene/gh-notify/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/joryeugene/gh-notify/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/joryeugene/gh-notify/releases/tag/v0.1.0

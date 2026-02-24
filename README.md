@@ -282,6 +282,10 @@ If you hit the limit, the daemon sleeps until the window resets (check with `gh 
 pkill -f gh-notify-daemon
 pkill -f gh-notify-bar
 
+# Optional: back up seen-ids if you plan to reinstall
+# Without it, all previously-seen notifications re-fire on first poll after reinstall
+# cp ~/.config/gh-notify/seen-ids ~/seen-ids.bak
+
 # Remove scripts, state, and CLI wrapper
 rm -rf ~/.config/gh-notify
 rm -f ~/.local/bin/gh-notify
