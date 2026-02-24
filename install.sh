@@ -126,6 +126,7 @@ ok "Installed: ${BIN_DIR}/gh-notify"
 
 # Warn if ~/.local/bin not in PATH
 if ! echo "$PATH" | tr ':' '\n' | grep -qF "$BIN_DIR"; then
+    # shellcheck disable=SC2088  # intentional: display string, not expansion
     warn "~/.local/bin is not in your PATH. Add to ~/.zshrc:"
     warn "  export PATH=\"\${HOME}/.local/bin:\${PATH}\""
 fi

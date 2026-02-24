@@ -33,12 +33,14 @@
 
 ## TLDR
 
-1. **Prereqs**: `gh`, `jq`, `tmux` — all via `brew install gh jq tmux`, plus `gh auth login`
-2. **Install**: `curl -fsSL https://raw.githubusercontent.com/joryeugene/gh-notify/main/install.sh | bash`
-3. **Launch**: `gh-notify` (in any tmux pane)
+**Prerequisites** (one-time):
+```bash
+brew install gh jq tmux
+gh auth login
+```
 
-> [!NOTE]
-> GitHub authentication is required. Run `gh auth login` before installing if you haven't already. The daemon uses `gh auth token` to authenticate API requests.
+1. **Install**: `curl -fsSL https://raw.githubusercontent.com/joryeugene/gh-notify/main/install.sh | bash`
+2. **Launch**: `gh-notify` (in any tmux pane)
 
 ---
 
@@ -89,7 +91,9 @@ flowchart LR
     end
 
     subgraph dispatch["One Per Poll Cycle"]
-        Q["priority queue\nHero › Glass › Ping › Tink"] --> SOUND[afplay]
+        Q["priority queue\nHero › Glass › Ping › Tink"] --> GATE{sfx-state}
+        GATE -->|ON| SOUND[afplay]
+        GATE -->|OFF| MUTE[silent]
         Q --> POPUP[osascript]
         Q --> LOG[events.log]
     end
@@ -183,7 +187,7 @@ The bar automatically starts the daemon. When the bar exits, it kills the daemon
 
 **Poll interval:**
 
-Edit `gh-notify-daemon.sh` and change the `sleep 30` at the bottom of the loop. Minimum recommended: 15 seconds (GitHub rate limit is 5000 requests/hour; 304 responses don't count).
+Edit `gh-notify-daemon.sh` and change the `sleep 30` at the bottom of the loop. The default is 30 seconds. Going below 15 seconds is not recommended (GitHub rate limit is 5000 requests/hour; 304 responses don't count toward that limit).
 
 **Sounds:**
 
@@ -219,4 +223,66 @@ pgrep -f gh-notify-daemon && echo "daemon running"
 
 # 5. Live trigger
 # Open a draft PR, request a review, approve it — bar updates within 30s
+```
+
+---
+
+## Troubleshooting
+
+**No events appearing in the bar**
+```bash
+# Check daemon is running
+pgrep -f gh-notify-daemon && echo "running" || echo "not running"
+
+# Check GitHub auth
+gh auth status
+
+# Check events.log for content
+cat ~/.config/gh-notify/events.log
+```
+
+**Bar shows events but daemon died mid-session**
+```bash
+# Kill any orphaned daemon
+pkill -f gh-notify-daemon
+# Then relaunch
+gh-notify
+```
+
+**Sound not playing**
+```bash
+# Check current sound state
+cat ~/.config/gh-notify/sfx-state   # should print ON
+
+# Test sound manually
+afplay /System/Library/Sounds/Glass.aiff
+
+# Toggle sound in the bar with [s]
+```
+
+**Daemon exits immediately on start**
+```bash
+# Check for a stale lock file
+ls ~/.config/gh-notify/.daemon.lock
+# If it exists but no daemon is running, remove it:
+rm -rf ~/.config/gh-notify/.daemon.lock
+```
+
+**Notifications stop after a long session**
+
+GitHub's rate limit is 5000 requests/hour. 304 (not-modified) responses don't count.
+If you hit the limit, the daemon sleeps until the window resets (check with `gh api /rate_limit`).
+
+---
+
+## Uninstall
+
+```bash
+# Stop the bar and daemon first (press q in the bar, or:)
+pkill -f gh-notify-daemon
+pkill -f gh-notify-bar
+
+# Remove scripts, state, and CLI wrapper
+rm -rf ~/.config/gh-notify
+rm -f ~/.local/bin/gh-notify
 ```

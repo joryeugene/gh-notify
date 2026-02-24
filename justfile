@@ -11,6 +11,17 @@ lint:
 install:
     bash install.sh
 
+# Remove all installed files and state
+uninstall:
+    @echo "Stopping any running processes..."
+    @pkill -f gh-notify-daemon 2>/dev/null || true
+    @pkill -f gh-notify-bar 2>/dev/null || true
+    @echo "Removing state directory..."
+    @rm -rf "${HOME}/.config/gh-notify"
+    @echo "Removing CLI wrapper..."
+    @rm -f "${HOME}/.local/bin/gh-notify"
+    @echo "Uninstalled."
+
 # Print a draft CHANGELOG section from commits since last tag
 # Review and paste into CHANGELOG.md [Unreleased] before releasing
 notes:

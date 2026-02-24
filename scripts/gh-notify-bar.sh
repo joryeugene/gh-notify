@@ -3,7 +3,7 @@
 # Spawns the daemon, displays event log, handles [s]ound / [c]lear / [q]uit.
 #
 # Layout: run as a small bottom pane in any tmux session
-# Keybinds: [s] toggle sound  [c] clear log  [q] quit
+# Keybinds: [s] toggle sound  [c] clear log  [r] restart daemon  [q] quit
 
 export TERM="${TERM:-xterm-256color}"
 
@@ -50,10 +50,15 @@ while true; do
         printf '\033[2m  Watching for GitHub notifications...\033[0m\n'
     fi
 
+    # Daemon health check
+    if ! kill -0 "$DAEMON_PID" 2>/dev/null; then
+        printf '\033[1;33m  ⚠  daemon offline - press r to restart\033[0m\n'
+    fi
+
     # Separator + keybind hints
     local_sfx=$(cat "$SFX_STATE" 2>/dev/null || echo "ON")
     printf '\033[2m────────────────────────────────────────────────────────────────────────\033[0m\n'
-    printf '  \033[1m[s]\033[0m sound \033[1m(%s)\033[0m  \033[1m[c]\033[0m clear  \033[1m[q]\033[0m quit\n' "$local_sfx"
+    printf '  \033[1m[s]\033[0m sound \033[1m(%s)\033[0m  \033[1m[c]\033[0m clear  \033[1m[r]\033[0m restart daemon  \033[1m[q]\033[0m quit\n' "$local_sfx"
 
     # Read a single keypress (2s timeout, no echo)
     key=""
@@ -70,6 +75,17 @@ while true; do
             ;;
         c|C)
             : > "$EVENTS_LOG"
+            ;;
+        r|R)
+            pkill -f gh-notify-daemon 2>/dev/null || true
+            # Wait for old daemon's EXIT trap to release the lock (max 3s)
+            _w=0
+            while [[ -d "${STATE_DIR}/.daemon.lock" && $_w -lt 30 ]]; do
+                sleep 0.1
+                (( _w++ )) || true
+            done
+            bash "${HOME}/.config/gh-notify/gh-notify-daemon.sh" &
+            DAEMON_PID=$!
             ;;
         q|Q)
             break
