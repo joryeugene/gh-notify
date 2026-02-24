@@ -25,7 +25,7 @@
 │ [12:07] 💬 New comment - Add retry logic (o/r)  │
 │ [12:09] 🔀 Merged - Update deps (org/repo)      │
 │ ──────────────────────────────────────────────  │
-│  [s] sound (ON)  [c] clear  [q] quit            │
+│  [s] sound  [c] clear  [r] restart  [q] quit    │
 └─────────────────────────────────────────────────┘
 </pre>
 </td>
@@ -49,10 +49,19 @@ gh auth login
 | Icon | Event | Trigger | Sound |
 |------|-------|---------|-------|
 | ✅ | Approved | Non-self APPROVED review on your PR | `Glass.aiff` |
-| 🔀 | Merged | Your PR was merged | `Hero.aiff` |
+| 🔀 | Merged | Your PR was merged (or state_change → merged) | `Hero.aiff` |
 | 💬 | New comment | Comment or mention on any thread | `Tink.aiff` |
 | 👀 | Review requested | You were asked to review | `Tink.aiff` |
 | 📌 | Assigned | Issue or PR assigned to you | `Ping.aiff` |
+| 👥 | Team mentioned | Your team was @mentioned | `Tink.aiff` |
+| 🔒 | Closed | PR or issue closed | `Ping.aiff` |
+| 🔓 | Reopened | PR or issue reopened | `Ping.aiff` |
+| ❌ | CI failed | Workflow run failed or timed out | `Ping.aiff` |
+| 🟢 | CI passed | Workflow run succeeded | `Ping.aiff` |
+| ⚙️ | CI running | Workflow run started | `Ping.aiff` |
+| ⛔ | CI cancelled | Workflow run cancelled | `Ping.aiff` |
+| ⚠️ | CI action required | Workflow requires manual action | `Ping.aiff` |
+| 🛡️ | Security alert | Dependabot or security advisory | `Glass.aiff` |
 | 🔔 | Activity | All other notification types | `Ping.aiff` |
 
 All sounds are built-in macOS system sounds. No dependencies beyond the prereqs.
@@ -65,6 +74,7 @@ All sounds are built-in macOS system sounds. No dependencies beyond the prereqs.
 |-----|--------|
 | `s` | Toggle sound ON/OFF |
 | `c` | Clear the event log |
+| `r` | Restart daemon (if crashed) |
 | `q` | Quit bar (also stops daemon) |
 
 ---

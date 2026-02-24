@@ -172,6 +172,78 @@ process_notification() {
                 fi
             fi
             ;;
+        team_mention)
+            event_icon="👥"
+            event_label="Team mentioned"
+            sound="Tink.aiff"
+            ;;
+        state_change)
+            if [[ -n "$subj_url" ]]; then
+                local sc_data sc_merged sc_state
+                sc_data=$(api_get "$subj_url") || sc_data=""
+                if [[ -n "$sc_data" ]]; then
+                    sc_merged=$(printf '%s' "$sc_data" | jq -r '.merged')
+                    sc_state=$(printf '%s' "$sc_data" | jq -r '.state')
+                    if [[ "$sc_merged" == "true" ]]; then
+                        event_icon="🔀"
+                        event_label="Merged"
+                        sound="Hero.aiff"
+                    elif [[ "$sc_state" == "closed" ]]; then
+                        event_icon="🔒"
+                        event_label="Closed"
+                        sound="Ping.aiff"
+                    elif [[ "$sc_state" == "open" ]]; then
+                        event_icon="🔓"
+                        event_label="Reopened"
+                        sound="Ping.aiff"
+                    fi
+                fi
+            fi
+            ;;
+        security_alert)
+            event_icon="🛡️"
+            event_label="Security alert"
+            sound="Glass.aiff"
+            ;;
+        ci_activity)
+            if [[ -n "$subj_url" ]]; then
+                local ci_data ci_status ci_conclusion
+                ci_data=$(api_get "$subj_url") || ci_data=""
+                if [[ -n "$ci_data" ]]; then
+                    ci_status=$(printf '%s' "$ci_data" | jq -r '.status // empty')
+                    ci_conclusion=$(printf '%s' "$ci_data" | jq -r '.conclusion // empty')
+                    case "$ci_conclusion" in
+                        failure|timed_out)
+                            event_icon="❌"
+                            event_label="CI failed"
+                            sound="Ping.aiff"
+                            ;;
+                        success)
+                            event_icon="🟢"
+                            event_label="CI passed"
+                            sound="Ping.aiff"
+                            ;;
+                        action_required)
+                            event_icon="⚠️"
+                            event_label="CI action required"
+                            sound="Ping.aiff"
+                            ;;
+                        cancelled)
+                            event_icon="⛔"
+                            event_label="CI cancelled"
+                            sound="Ping.aiff"
+                            ;;
+                        *)
+                            if [[ "$ci_status" == "in_progress" ]]; then
+                                event_icon="⚙️"
+                                event_label="CI running"
+                                sound="Ping.aiff"
+                            fi
+                            ;;
+                    esac
+                fi
+            fi
+            ;;
     esac
 
     log_event "$event_icon" "$event_label" "$title" "$repo_name"

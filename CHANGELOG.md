@@ -11,6 +11,23 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.4.0] - 2026-02-23
+
+### Added
+- CI/Actions events (`ci_activity`): ❌ failed, 🟢 passed, ⚙️ running, ⛔ cancelled, ⚠️ action required — each fetches the check suite for actual conclusion
+- State change events (`state_change`): 🔒 closed, 🔓 reopened, 🔀 merged (via PR object fetch)
+- Team mention events (`team_mention`): 👥 Team mentioned
+- Security alert events (`security_alert`): 🛡️ Security alert (Glass sound)
+- Per-type color in bar for all new icons: red for ❌/⛔, green for 🟢, dim for ⚙️, cyan for 👥, yellow for 🔒/🔓, magenta for 🛡️
+- Inline-header separator replaces fixed-width line: `── gh-notify ─ N ──` auto-sizes to terminal width via `tput cols`
+- Event count shown live in the separator
+
+### Changed
+- Events table in README expanded from 6 to 14 rows covering all handled reasons
+- Layout comment updated to describe actual rendering behavior
+
+---
+
 ## [0.3.0] - 2026-02-23
 
 ### Added
@@ -58,7 +75,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/joryeugene/gh-notify/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/joryeugene/gh-notify/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/joryeugene/gh-notify/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/joryeugene/gh-notify/releases/tag/v0.1.0

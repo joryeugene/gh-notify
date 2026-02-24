@@ -2,7 +2,7 @@
 # gh-notify-bar.sh — Interactive bottom bar showing live GitHub PR notifications.
 # Spawns the daemon, displays event log, handles [s]ound / [c]lear / [q]uit.
 #
-# Layout: run as a small bottom pane in any tmux session
+# Layout: inline-header separator, event color, auto-sized to tput cols
 # Keybinds: [s] toggle sound  [c] clear log  [r] restart daemon  [q] quit
 
 export TERM="${TERM:-xterm-256color}"
@@ -45,7 +45,25 @@ while true; do
 
     # Show last 8 events (or placeholder if log is empty)
     if [[ -s "$EVENTS_LOG" ]]; then
-        tail -8 "$EVENTS_LOG"
+        while IFS= read -r _line; do
+            case "$_line" in
+                *"✅"*) printf '\033[1;32m%s\033[0m\n' "$_line" ;;
+                *"🔀"*) printf '\033[1;35m%s\033[0m\n' "$_line" ;;
+                *"💬"*) printf '\033[1;36m%s\033[0m\n' "$_line" ;;
+                *"👀"*) printf '\033[1;33m%s\033[0m\n' "$_line" ;;
+                *"📌"*) printf '\033[1;34m%s\033[0m\n' "$_line" ;;
+                *"⚠"*)  printf '\033[1;33m%s\033[0m\n' "$_line" ;;
+                *"❌"*) printf '\033[1;31m%s\033[0m\n' "$_line" ;;
+                *"🟢"*) printf '\033[1;32m%s\033[0m\n' "$_line" ;;
+                *"⚙"*)  printf '\033[2m%s\033[0m\n'   "$_line" ;;
+                *"⛔"*) printf '\033[0;31m%s\033[0m\n' "$_line" ;;
+                *"👥"*) printf '\033[1;36m%s\033[0m\n' "$_line" ;;
+                *"🔒"*) printf '\033[1;33m%s\033[0m\n' "$_line" ;;
+                *"🔓"*) printf '\033[1;33m%s\033[0m\n' "$_line" ;;
+                *"🛡"*)  printf '\033[1;35m%s\033[0m\n' "$_line" ;;
+                *)       printf '\033[2m%s\033[0m\n'   "$_line" ;;
+            esac
+        done < <(tail -8 "$EVENTS_LOG")
     else
         printf '\033[2m  Watching for GitHub notifications...\033[0m\n'
     fi
@@ -55,10 +73,20 @@ while true; do
         printf '\033[1;33m  ⚠  daemon offline - press r to restart\033[0m\n'
     fi
 
-    # Separator + keybind hints
+    # Inline-header separator + keybind hints
     local_sfx=$(cat "$SFX_STATE" 2>/dev/null || echo "ON")
-    printf '\033[2m────────────────────────────────────────────────────────────────────────\033[0m\n'
-    printf '  \033[1m[s]\033[0m sound \033[1m(%s)\033[0m  \033[1m[c]\033[0m clear  \033[1m[r]\033[0m restart daemon  \033[1m[q]\033[0m quit\n' "$local_sfx"
+    _cols=$(tput cols 2>/dev/null || echo 80)
+    _count=$(tail -8 "$EVENTS_LOG" 2>/dev/null | grep -c . || echo 0)
+    _mid=" gh-notify ─ ${_count} "
+    _left=20
+    _right=$(( _cols - _left - ${#_mid} ))
+    [[ $_right -lt 0 ]] && _right=0
+    printf '\033[2m'
+    _i=0; while [[ $_i -lt $_left ]]; do printf '─'; (( _i++ )); done
+    printf '\033[0m%s\033[2m' "$_mid"
+    _i=0; while [[ $_i -lt $_right ]]; do printf '─'; (( _i++ )); done
+    printf '\033[0m\n'
+    printf '  \033[1m[s]\033[0m sound \033[1m(%s)\033[0m  \033[1m[c]\033[0m clear  \033[1m[r]\033[0m restart  \033[1m[q]\033[0m quit\n' "$local_sfx"
 
     # Read a single keypress (2s timeout, no echo)
     key=""
