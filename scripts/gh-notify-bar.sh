@@ -74,20 +74,52 @@ while true; do
         printf '\033[1;33m  ⚠  daemon offline - press r to restart\033[0m\n'
     fi
 
-    # Inline-header separator + keybind hints
+    # Separator + keybind hints
     local_sfx=$(cat "$SFX_STATE" 2>/dev/null || echo "ON")
-    _cols=$(tput cols 2>/dev/null || echo 80)
-    _count=$(tail -8 "$EVENTS_LOG" 2>/dev/null | grep -c . || echo 0)
-    _mid=" gh-notify ─ ${_count} "
-    _left=20
-    _right=$(( _cols - _left - ${#_mid} ))
-    [[ $_right -lt 0 ]] && _right=0
-    printf '\033[2m'
-    _i=0; while [[ $_i -lt $_left ]]; do printf '─'; (( _i++ )); done
-    printf '\033[0m%s\033[2m' "$_mid"
-    _i=0; while [[ $_i -lt $_right ]]; do printf '─'; (( _i++ )); done
-    printf '\033[0m\n'
-    printf '  \033[1m[s]\033[0m sound \033[1m(%s)\033[0m  \033[1m[c]\033[0m clear  \033[1m[r]\033[0m restart  \033[1m[o]\033[0m open  \033[1m[q]\033[0m quit\n' "$local_sfx"
+    _count=$(wc -l < "$EVENTS_LOG" 2>/dev/null | tr -d ' '); _count="${_count:-0}"
+    _cols=${COLUMNS:-$(tput cols 2>/dev/null)}
+    (( ${_cols:-0} > 0 )) || _cols=80
+    _label="·:·[ gh-notify · ${_count} ]·:·"
+    _pad=$(( (_cols - ${#_label}) / 2 ))
+    [[ $_pad -lt 0 ]] && _pad=0
+    printf "%${_pad}s\033[2m·:·[\033[0m gh-notify · %s \033[2m]·:·\033[0m\n" "" "$_count"
+
+    # Stats line: per-icon session totals + top repos (omitted when log is empty)
+    if [[ -s "$EVENTS_LOG" ]]; then
+        _cnt_merge=$(grep -c '🔀' "$EVENTS_LOG" 2>/dev/null)   || _cnt_merge=0
+        _cnt_approve=$(grep -c '✅' "$EVENTS_LOG" 2>/dev/null) || _cnt_approve=0
+        _cnt_comment=$(grep -c '💬' "$EVENTS_LOG" 2>/dev/null) || _cnt_comment=0
+        _cnt_fail=$(grep -c '❌' "$EVENTS_LOG" 2>/dev/null)    || _cnt_fail=0
+        _cnt_pass=$(grep -c '🟢' "$EVENTS_LOG" 2>/dev/null)    || _cnt_pass=0
+        _stats=""
+        [[ "$_cnt_merge"   -gt 0 ]] && _stats+="🔀 ${_cnt_merge}  "
+        [[ "$_cnt_approve" -gt 0 ]] && _stats+="✅ ${_cnt_approve}  "
+        [[ "$_cnt_comment" -gt 0 ]] && _stats+="💬 ${_cnt_comment}  "
+        [[ "$_cnt_fail"    -gt 0 ]] && _stats+="❌ ${_cnt_fail}  "
+        [[ "$_cnt_pass"    -gt 0 ]] && _stats+="🟢 ${_cnt_pass}  "
+        _top_repos=$(grep -oE '\([^)]+/[^)]+\)' "$EVENTS_LOG" 2>/dev/null \
+            | sed 's/[()]//g' | sort | uniq -c | sort -rn | head -3 \
+            | awk '{printf "%s(%s) ", $2, $1}')
+        if [[ -n "$_stats" || -n "$_top_repos" ]]; then
+            _sline="  ${_stats}"
+            [[ -n "$_top_repos" ]] && _sline+="│  ${_top_repos}"
+            printf '\033[2m%s\033[0m\n' "$_sline"
+        fi
+    fi
+
+    # Determine [o] label from last event URL type
+    _open_label="open"
+    _last_event=$(tail -1 "$EVENTS_LOG" 2>/dev/null)
+    if [[ "$_last_event" == *$'\t'* ]]; then
+        case "$_last_event" in
+            *"/actions"*) _open_label="CI"  ;;
+            *"/pull/"*)   _open_label="PR"  ;;
+            *)            _open_label="url" ;;
+        esac
+    fi
+
+    printf '  \033[1m[s]\033[0msnd(%s)  \033[1m[c]\033[0mclr  \033[1m[r]\033[0mrst  \033[1m[o]\033[0m%s  \033[1m[q]\033[0mquit\n' \
+        "$local_sfx" "$_open_label"
 
     # Read a single keypress (2s timeout, no echo)
     key=""

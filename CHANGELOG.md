@@ -11,6 +11,22 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.6.0] - 2026-02-24
+
+### Added
+- Distinct sound mappings per event type: CI failure/action_required → Basso, CI pass/reopened → Pop, CI cancelled/closed → Funk, security alert → Sosumi; merge (Hero) and approve (Glass) unchanged
+- Multi-sound dispatch: all distinct sounds in a poll batch now play sequentially in a background subshell instead of one priority-winner; a merge + CI fail in one poll plays Hero then Basso
+- Stats line in footer showing per-icon session totals (🔀 ✅ 💬 ❌ 🟢) sourced from the full events.log; shown only when non-zero, resets when `[c]` clears the log
+- Repo activity inline with stats: top-3 repos by event count appended after `│` separator (e.g. `org/repo(9) other/repo(3)`)
+- Centered separator: `·:·[ gh-notify · N ]·:·` dynamically pads to terminal width via `tput cols`; the `+4` correction accounts for 4 middle-dot chars (U+00B7) that are 2 UTF-8 bytes but 1 display column each
+
+### Changed
+- Separator event count now reflects true all-time total from full events.log (`wc -l`) instead of capped-at-8 tail count
+- `queue_sound()` rewritten from priority-replacement to additive deduplication
+- `play_sound()` helper removed (inlined into async dispatch block)
+
+---
+
 ## [0.5.0] - 2026-02-23
 
 ### Added
@@ -89,7 +105,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/joryeugene/gh-notify/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/joryeugene/gh-notify/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/joryeugene/gh-notify/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/joryeugene/gh-notify/compare/v0.2.0...v0.3.0

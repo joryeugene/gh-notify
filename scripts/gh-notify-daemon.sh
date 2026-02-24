@@ -34,31 +34,6 @@ SELF=$(gh api /user --jq '.login' 2>/dev/null) || {
 }
 
 # ── helpers ───────────────────────────────────────────────────────────────────
-play_sound() {
-    local sound="$1"
-    local sfx
-    sfx=$(cat "$SFX_STATE" 2>/dev/null || echo "ON")
-    [[ "$sfx" == "ON" ]] && afplay "/System/Library/Sounds/${sound}" 2>/dev/null &
-}
-
-# ── batch state (reset each poll cycle) ─────────────────────────────────────
-BATCH_SOUND=""
-BATCH_COUNT=0
-BATCH_BEST_LABEL=""
-BATCH_BEST_REPO=""
-BATCH_BEST_TITLE=""
-
-# Priority: Hero > Glass > Ping > Tink
-queue_sound() {
-    local s="$1"
-    case "$s" in
-        Hero.aiff)  BATCH_SOUND="Hero.aiff" ;;
-        Glass.aiff) [[ "$BATCH_SOUND" != "Hero.aiff" ]] && BATCH_SOUND="Glass.aiff" ;;
-        Ping.aiff)  [[ "$BATCH_SOUND" == "Tink.aiff" || -z "$BATCH_SOUND" ]] && BATCH_SOUND="Ping.aiff" ;;
-        Tink.aiff)  [[ -z "$BATCH_SOUND" ]] && BATCH_SOUND="Tink.aiff" ;;
-    esac
-}
-
 send_notification() {
     local title="$1" subtitle="$2" message="$3"
     title="${title//\\/}"; title="${title//\"/\'}"
@@ -107,6 +82,20 @@ to_html_url() {
         -e 's|/pulls/\([0-9]*\)$|/pull/\1|' \
         -e 's|/check-suites/[0-9]*$|/actions|' \
         -e 's|/check-runs/[0-9]*$|/actions|'
+}
+
+# ── batch state (reset each poll cycle) ──────────────────────────────────────
+BATCH_SOUNDS=""
+BATCH_COUNT=0
+BATCH_BEST_LABEL=""
+BATCH_BEST_REPO=""
+BATCH_BEST_TITLE=""
+
+queue_sound() {
+    local s="$1"
+    # Skip if already queued; append otherwise
+    [[ " $BATCH_SOUNDS " == *" $s "* ]] && return
+    BATCH_SOUNDS="${BATCH_SOUNDS:+$BATCH_SOUNDS }$s"
 }
 
 # ── process a single notification ─────────────────────────────────────────────
@@ -213,11 +202,11 @@ process_notification() {
                     elif [[ "$sc_state" == "closed" ]]; then
                         event_icon="🔒"
                         event_label="Closed"
-                        sound="Ping.aiff"
+                        sound="Funk.aiff"
                     elif [[ "$sc_state" == "open" ]]; then
                         event_icon="🔓"
                         event_label="Reopened"
-                        sound="Ping.aiff"
+                        sound="Pop.aiff"
                     fi
                 fi
             fi
@@ -225,7 +214,7 @@ process_notification() {
         security_alert)
             event_icon="🛡️"
             event_label="Security alert"
-            sound="Glass.aiff"
+            sound="Sosumi.aiff"
             ;;
         ci_activity)
             if [[ -n "$subj_url" ]]; then
@@ -238,22 +227,22 @@ process_notification() {
                         failure|timed_out)
                             event_icon="❌"
                             event_label="CI failed"
-                            sound="Ping.aiff"
+                            sound="Basso.aiff"
                             ;;
                         success)
                             event_icon="🟢"
                             event_label="CI passed"
-                            sound="Ping.aiff"
+                            sound="Pop.aiff"
                             ;;
                         action_required)
                             event_icon="⚠️"
                             event_label="CI action required"
-                            sound="Ping.aiff"
+                            sound="Basso.aiff"
                             ;;
                         cancelled)
                             event_icon="⛔"
                             event_label="CI cancelled"
-                            sound="Ping.aiff"
+                            sound="Funk.aiff"
                             ;;
                         *)
                             if [[ "$ci_status" == "in_progress" ]]; then
@@ -318,7 +307,7 @@ while true; do
     fi
 
     # Reset batch accumulators
-    BATCH_SOUND=""
+    BATCH_SOUNDS=""
     BATCH_COUNT=0
     BATCH_BEST_LABEL=""
     BATCH_BEST_REPO=""
@@ -342,8 +331,15 @@ while true; do
         process_notification "$notif"
     done
 
-    # Dispatch once for the whole batch: 1 sound, 1 popup
-    [[ -n "$BATCH_SOUND" ]] && play_sound "$BATCH_SOUND"
+    # Dispatch once for the whole batch: sounds (sequential, async), 1 popup
+    if [[ -n "$BATCH_SOUNDS" ]]; then
+        _sfx=$(cat "$SFX_STATE" 2>/dev/null || echo "ON")
+        if [[ "$_sfx" == "ON" ]]; then
+            ( for _snd in $BATCH_SOUNDS; do
+                afplay "/System/Library/Sounds/${_snd}" 2>/dev/null
+              done ) &
+        fi
+    fi
     if [[ "$BATCH_COUNT" -eq 1 ]]; then
         send_notification "GitHub: ${BATCH_BEST_LABEL}" "$BATCH_BEST_REPO" "$BATCH_BEST_TITLE"
     elif [[ "$BATCH_COUNT" -gt 1 ]]; then
