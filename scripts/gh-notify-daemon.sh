@@ -130,7 +130,11 @@ process_notification() {
     case "$reason" in
         comment|mention)
             event_icon="💬"
-            event_label="New comment"
+            if [[ "$subj_type" == "PullRequest" ]]; then
+                event_label="PR comment"
+            else
+                event_label="New comment"
+            fi
             sound="Tink.aiff"
             ;;
         review_requested)
@@ -160,21 +164,33 @@ process_notification() {
                         event_label="Merged"
                         sound="Hero.aiff"
                     elif [[ "$state" == "open" ]]; then
-                        local reviews_data approver
+                        local reviews_data approver changer
                         reviews_data=$(api_get "${subj_url}/reviews") || reviews_data=""
 
                         if [[ -n "$reviews_data" ]]; then
                             approver=$(printf '%s' "$reviews_data" | jq -r \
-                            --arg self "$SELF" \
-                            '[.[] | select(.state == "APPROVED" and .user.login != $self)] | last | .user.login // empty')
+                                --arg self "$SELF" \
+                                '[.[] | select(.state == "APPROVED" and .user.login != $self)] | last | .user.login // empty')
+                            changer=$(printf '%s' "$reviews_data" | jq -r \
+                                --arg self "$SELF" \
+                                '[.[] | select(.state == "CHANGES_REQUESTED" and .user.login != $self)] | last | .user.login // empty')
                         else
                             approver=""
+                            changer=""
                         fi
 
                         if [[ -n "$approver" ]]; then
                             event_icon="✅"
                             event_label="Approved by ${approver}"
                             sound="Glass.aiff"
+                        elif [[ -n "$changer" ]]; then
+                            event_icon="🔁"
+                            event_label="Changes requested by ${changer}"
+                            sound="Basso.aiff"
+                        else
+                            event_icon="💬"
+                            event_label="PR comment"
+                            sound="Tink.aiff"
                         fi
                     fi
                 fi

@@ -54,6 +54,7 @@ while true; do
                 *"👀"*) printf '\033[1;33m%s\033[0m\n' "$_display" ;;
                 *"📌"*) printf '\033[1;34m%s\033[0m\n' "$_display" ;;
                 *"⚠"*)  printf '\033[1;33m%s\033[0m\n' "$_display" ;;
+                *"🔁"*) printf '\033[1;33m%s\033[0m\n' "$_display" ;;
                 *"❌"*) printf '\033[1;31m%s\033[0m\n' "$_display" ;;
                 *"🟢"*) printf '\033[1;32m%s\033[0m\n' "$_display" ;;
                 *"⚙"*)  printf '\033[2m%s\033[0m\n'   "$_display" ;;
@@ -86,14 +87,16 @@ while true; do
 
     # Stats line: per-icon session totals + top repos (omitted when log is empty)
     if [[ -s "$EVENTS_LOG" ]]; then
-        _cnt_merge=$(grep -c '🔀' "$EVENTS_LOG" 2>/dev/null)   || _cnt_merge=0
-        _cnt_approve=$(grep -c '✅' "$EVENTS_LOG" 2>/dev/null) || _cnt_approve=0
-        _cnt_comment=$(grep -c '💬' "$EVENTS_LOG" 2>/dev/null) || _cnt_comment=0
-        _cnt_fail=$(grep -c '❌' "$EVENTS_LOG" 2>/dev/null)    || _cnt_fail=0
-        _cnt_pass=$(grep -c '🟢' "$EVENTS_LOG" 2>/dev/null)    || _cnt_pass=0
+        _cnt_merge=$(grep -c '🔀' "$EVENTS_LOG" 2>/dev/null)    || _cnt_merge=0
+        _cnt_approve=$(grep -c '✅' "$EVENTS_LOG" 2>/dev/null)  || _cnt_approve=0
+        _cnt_changes=$(grep -c '🔁' "$EVENTS_LOG" 2>/dev/null)  || _cnt_changes=0
+        _cnt_comment=$(grep -c '💬' "$EVENTS_LOG" 2>/dev/null)  || _cnt_comment=0
+        _cnt_fail=$(grep -c '❌' "$EVENTS_LOG" 2>/dev/null)     || _cnt_fail=0
+        _cnt_pass=$(grep -c '🟢' "$EVENTS_LOG" 2>/dev/null)     || _cnt_pass=0
         _stats=""
         [[ "$_cnt_merge"   -gt 0 ]] && _stats+="🔀 ${_cnt_merge}  "
         [[ "$_cnt_approve" -gt 0 ]] && _stats+="✅ ${_cnt_approve}  "
+        [[ "$_cnt_changes" -gt 0 ]] && _stats+="🔁 ${_cnt_changes}  "
         [[ "$_cnt_comment" -gt 0 ]] && _stats+="💬 ${_cnt_comment}  "
         [[ "$_cnt_fail"    -gt 0 ]] && _stats+="❌ ${_cnt_fail}  "
         [[ "$_cnt_pass"    -gt 0 ]] && _stats+="🟢 ${_cnt_pass}  "
