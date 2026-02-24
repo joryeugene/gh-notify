@@ -21,7 +21,7 @@
 │   PRs  Issues  Repos  ...                       │
 │                                                 │
 ├─────────────────────────────────────────────────┤
-│ [12:04] ✅ Approved by alice - Fix auth (org/r)  │
+│ [12:04] ✅ Approved by alice - Fix auth (org/r) │
 │ [12:07] 💬 New comment - Add retry logic (o/r)  │
 │ [12:09] 🔀 Merged - Update deps (org/repo)      │
 │ ──────────────────────────────────────────────  │
@@ -70,23 +70,36 @@ All sounds are built-in macOS system sounds. No dependencies beyond the prereqs.
 ## How It Works
 
 ```mermaid
-flowchart TD
-    B[gh-notify-bar.sh] -->|spawns| C[gh-notify-daemon.sh]
-    C -->|curl -si with If-Modified-Since| D{GitHub /notifications}
-    D -->|304 Not Modified| E[sleep 30, skip]
-    D -->|200 OK + JSON| F[for each unseen ID]
-    F -->|check reason field| G{Event type?}
-    G -->|comment/mention| H[💬 Tink.aiff]
-    G -->|review_requested| I[👀 Tink.aiff]
-    G -->|assign| J[📌 Ping.aiff]
-    G -->|author + fetch PR| K{PR state?}
-    K -->|merged=true| L[🔀 Hero.aiff]
-    K -->|open + APPROVED| M[✅ Glass.aiff]
-    K -->|otherwise| N[🔔 Ping.aiff]
-    H & I & J & L & M & N -->|append| O[events.log]
-    H & I & J & L & M & N -->|osascript| P[macOS notification]
-    H & I & J & L & M & N -->|afplay| Q[Sound]
-    O -->|tail -8| R[bar display loop]
+flowchart LR
+    subgraph loop["Poll Loop"]
+        BAR[gh-notify-bar.sh] -->|spawns| DAEMON[gh-notify-daemon.sh]
+        DAEMON -->|If-Modified-Since| POLL{GET /notifications}
+        POLL -->|304 Not Modified| SLEEP[sleep 30]
+        SLEEP --> DAEMON
+    end
+
+    subgraph classify["Per Notification"]
+        FILTER["dedup: seen-ids\n+ batch repo:title"] --> R{reason}
+        R -->|"comment / mention\nreview_requested"| TINK["💬 👀  Tink"]
+        R -->|assign| PING["📌 Ping"]
+        R -->|author → fetch PR| STATE{PR state}
+        STATE -->|merged| HERO["🔀 Hero"]
+        STATE -->|approved| GLASS["✅ Glass"]
+        STATE -->|other| PING
+    end
+
+    subgraph dispatch["One Per Poll Cycle"]
+        Q["priority queue\nHero › Glass › Ping › Tink"] --> SOUND[afplay]
+        Q --> POPUP[osascript]
+        Q --> LOG[events.log]
+    end
+
+    POLL -->|200 OK| FILTER
+    TINK --> Q
+    PING --> Q
+    HERO --> Q
+    GLASS --> Q
+    LOG -->|tail -8| BAR
 ```
 
 The daemon uses HTTP conditional requests (`If-Modified-Since` / `304 Not Modified`). GitHub's API returns 304 when the notification list hasn't changed since the last poll — these responses don't count against your rate limit.
