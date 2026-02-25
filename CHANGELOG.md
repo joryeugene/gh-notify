@@ -11,6 +11,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.8.0] - 2026-02-24
+
+### Added
+- `assets/icon.svg`: KingBee — cute bee icon (amber body, black stripes, iridescent wings, big eyes, antennae, stinger) on GitHub dark background. The bee is the notification.
+- `just build-notifier`: repackages terminal-notifier with the custom icon and bundle ID `com.joryeugene.gh-notify-notifier`. Builds a full ICNS iconset via `rsvg-convert` + `sips` + `iconutil`, ad-hoc signs with `codesign`, strips quarantine, triggers the first-launch notification permission prompt. Requires `brew install librsvg`.
+- README: bee icon displayed above badges
+
+### Changed
+- daemon/bar: notification sender now prefers `gh-notify-notifier.app` binary when present, so the bee icon appears in the left-side notification slot. Falls back to system `terminal-notifier`, then `osascript`.
+- install: downloads GitHub mark PNG to `~/.config/gh-notify/icon.png` for use as `-contentImage` on the right side of notifications
+
+---
+
 ## [0.7.0] - 2026-02-24
 
 ### Added
@@ -127,7 +140,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/joryeugene/gh-notify/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/joryeugene/gh-notify/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/joryeugene/gh-notify/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/joryeugene/gh-notify/compare/v0.4.0...v0.5.0
