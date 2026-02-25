@@ -77,7 +77,11 @@ if command -v terminal-notifier &>/dev/null; then
     ok "terminal-notifier found: $(terminal-notifier -version 2>/dev/null || echo 'installed')"
 elif command -v brew &>/dev/null; then
     info "Installing terminal-notifier via Homebrew..."
-    brew install terminal-notifier &>/dev/null && ok "terminal-notifier installed" || warn "terminal-notifier install failed — notifications may not appear from tmux"
+    if brew install terminal-notifier &>/dev/null; then
+        ok "terminal-notifier installed"
+    else
+        warn "terminal-notifier install failed — notifications may not appear from tmux"
+    fi
 else
     warn "terminal-notifier not found and Homebrew unavailable. Install manually: brew install terminal-notifier"
 fi
