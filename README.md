@@ -8,13 +8,12 @@
   <a href="https://github.com/joryeugene/gh-notify/blob/main/LICENSE"><img src="https://img.shields.io/github/license/joryeugene/gh-notify.svg" alt="MIT License"></a>
   <img src="https://img.shields.io/badge/platform-macOS-lightgrey.svg" alt="macOS">
   <img src="https://img.shields.io/badge/requires-gh%20CLI-blue.svg" alt="requires gh CLI">
-  <img src="https://img.shields.io/badge/tmux-required-orange.svg" alt="tmux required">
 </p>
 
 <table><tr>
 <td>
   <h3>Real-time GitHub PR notifications with macOS sounds</h3>
-  <p>Background daemon that polls GitHub every 30s, fires event-specific sounds and macOS popups, and streams a live log into a small tmux bottom bar. Run it in any tmux session as a persistent notification pane.</p>
+  <p>Background daemon that polls GitHub every 30s, fires event-specific sounds and macOS popups, and streams a live log into an interactive bottom bar. Run it in any terminal pane.</p>
 </td>
 <td align="center">
 <pre>
@@ -33,7 +32,7 @@
 
 gh-notify ships a custom notification app (`gh-notify-notifier.app`) — a minimal Objective-C `.app` bundle with the KingBee bee icon and bundle ID `com.joryeugene.gh-notify`. It appears in System Settings as **GH Notifier**.
 
-**Why a custom app:** `osascript display notification` requires the calling process to be attached to the macOS GUI session. The tmux server is a background daemon — notifications sent via `osascript` from within tmux are silently dropped. A proper `.app` bundle with `UNUserNotificationCenter` works from any context, including tmux.
+**Why a custom app:** `osascript display notification` requires the calling process to be attached to the macOS GUI session. Background daemons run in a detached session with no GUI attachment — notifications sent via `osascript` from a detached process are silently dropped. A proper `.app` bundle with `UNUserNotificationCenter` works from any context, including background daemons.
 
 **One-time setup:** On first use, macOS opens System Settings to request notification permission. Find **GH Notifier** in the list and set the style to **Banners** or **Alerts**. The first launch triggers a permission prompt — click **Allow**.
 
@@ -52,12 +51,13 @@ open "x-apple.systempreferences:com.apple.preference.notifications"
 
 **Prerequisites** (one-time):
 ```bash
-brew install gh jq tmux
+brew install gh jq
+# tmux is optional — gh-notify runs in any terminal pane
 gh auth login
 ```
 
 1. **Install**: `curl -fsSL https://raw.githubusercontent.com/joryeugene/gh-notify/main/install.sh | bash`
-2. **Launch**: `gh-notify` (in any tmux pane)
+2. **Launch**: `gh-notify` (in any terminal pane)
 
 ---
 
@@ -197,7 +197,7 @@ tmux select-pane -t :.1
 exec gh dash
 ```
 
-**Run the bar in any tmux pane:**
+**Run the bar in any terminal pane (tmux example):**
 
 ```bash
 gh-notify
