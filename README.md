@@ -66,19 +66,23 @@ gh auth login
 | Icon | Event | Trigger | Sound |
 |------|-------|---------|-------|
 | ✅ | Approved | Non-self APPROVED review on your PR | `Glass.aiff` |
-| 🔀 | Merged | Your PR was merged (or state_change → merged) | `Hero.aiff` |
-| 💬 | New comment | Comment or mention on any thread | `Tink.aiff` |
+| 🔁 | Changes requested | Reviewer requested changes on your PR | `Basso.aiff` |
+| 🔀 | Merged | PR merged (author or state_change) | `Hero.aiff` |
+| 💬 | Comment / mention | Comment, @mention, or PR review comment | `Tink.aiff` |
 | 👀 | Review requested | You were asked to review | `Tink.aiff` |
 | 📌 | Assigned | Issue or PR assigned to you | `Ping.aiff` |
+| 🚦 | Approval needed | Approval requested on a PR | `Tink.aiff` |
 | 👥 | Team mentioned | Your team was @mentioned | `Tink.aiff` |
-| 🔒 | Closed | PR or issue closed | `Ping.aiff` |
-| 🔓 | Reopened | PR or issue reopened | `Ping.aiff` |
-| ❌ | CI failed | Workflow run failed or timed out | `Ping.aiff` |
-| 🟢 | CI passed | Workflow run succeeded | `Ping.aiff` |
-| ⚙️ | CI running | Workflow run started | `Ping.aiff` |
-| ⛔ | CI cancelled | Workflow run cancelled | `Ping.aiff` |
-| ⚠️ | CI action required | Workflow requires manual action | `Ping.aiff` |
-| 🛡️ | Security alert | Dependabot or security advisory | `Glass.aiff` |
+| 🔒 | Closed | PR or issue closed without merging | `Funk.aiff` |
+| 🔓 | Reopened | PR or issue reopened | `Pop.aiff` |
+| 📬 | Repo invitation | You were invited to a repository | `Ping.aiff` |
+| ❌ | CI failed | Workflow run failed or timed out | `Basso.aiff` |
+| 🟢 | CI passed | Workflow run succeeded | `Pop.aiff` |
+| ⚙️ | CI running | Workflow run in progress | `Ping.aiff` |
+| ⛔ | CI cancelled | Workflow run cancelled | `Funk.aiff` |
+| ⚠️ | CI action required | Workflow requires manual action | `Basso.aiff` |
+| ⏭️ | CI skipped | Workflow run skipped / neutral / stale | `Ping.aiff` |
+| 🛡️ | Security alert | Dependabot or security advisory | `Sosumi.aiff` |
 | 🔔 | Activity | All other notification types | `Ping.aiff` |
 
 All sounds are built-in macOS system sounds. No dependencies beyond the prereqs.
@@ -292,9 +296,8 @@ afplay /System/Library/Sounds/Glass.aiff
 
 **Daemon exits immediately on start**
 ```bash
-# Check for a stale lock file
-ls ~/.config/gh-notify/.daemon.lock
-# If it exists but no daemon is running, remove it:
+# The daemon detects and reclaims stale locks automatically.
+# If you suspect a stuck state, force-clear manually:
 rm -rf ~/.config/gh-notify/.daemon.lock
 ```
 
