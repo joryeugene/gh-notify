@@ -17,14 +17,34 @@ mkdir -p "$STATE_DIR"
 [[ -f "$SFX_STATE" ]] || echo "ON" > "$SFX_STATE"
 touch "$EVENTS_LOG"
 
-# ── spawn daemon ──────────────────────────────────────────────────────────────
-bash "${HOME}/.config/gh-notify/gh-notify-daemon.sh" &
-DAEMON_PID=$!
-sleep 0.2
-if ! kill -0 "$DAEMON_PID" 2>/dev/null; then
-    printf '\033[1;31m  ERROR: daemon failed to start. Run: gh auth status\033[0m\n'
-    sleep 3
-    exit 1
+# ── spawn daemon (antifragile) ────────────────────────────────────────────────
+_lock_pid() { cat "${STATE_DIR}/.daemon.lock/pid" 2>/dev/null; }
+
+# Adopt existing healthy daemon rather than spawning a second one
+_p=$(_lock_pid)
+if [[ -n "$_p" ]] && kill -0 "$_p" 2>/dev/null; then
+    DAEMON_PID=$_p
+else
+    bash "${HOME}/.config/gh-notify/gh-notify-daemon.sh" &
+    DAEMON_PID=$!
+    # Wait up to 2s — gives auth API calls time, and handles lock-race adoption
+    _w=0
+    while [[ $_w -lt 20 ]]; do
+        sleep 0.1; (( _w++ )) || true
+        kill -0 "$DAEMON_PID" 2>/dev/null && break
+        # Daemon may have lost a lock race — adopt the winner
+        _p=$(_lock_pid)
+        if [[ -n "$_p" ]] && kill -0 "$_p" 2>/dev/null; then
+            DAEMON_PID=$_p; break
+        fi
+    done
+    if ! kill -0 "$DAEMON_PID" 2>/dev/null; then
+        _last_err=$(grep "ERROR" "$EVENTS_LOG" 2>/dev/null | tail -1)
+        printf '\033[1;31m  ERROR: daemon failed to start.\033[0m\n'
+        [[ -n "$_last_err" ]] && printf '\033[1;31m  %s\033[0m\n' "$_last_err"
+        sleep 3
+        exit 1
+    fi
 fi
 
 # ── cleanup on exit ───────────────────────────────────────────────────────────

@@ -19,9 +19,17 @@ touch "$EVENTS_LOG" "$SEEN_IDS"
 # ── prevent duplicate instances ───────────────────────────────────────────────
 LOCK_FILE="${STATE_DIR}/.daemon.lock"
 if ! mkdir "$LOCK_FILE" 2>/dev/null; then
-    exit 0
+    _lock_pid=$(cat "$LOCK_FILE/pid" 2>/dev/null)
+    if [[ -n "$_lock_pid" ]] && kill -0 "$_lock_pid" 2>/dev/null; then
+        exit 0  # healthy daemon already running
+    fi
+    # stale lock — reclaim it
+    rm -f "$LOCK_FILE/pid"
+    rmdir "$LOCK_FILE" 2>/dev/null || true
+    mkdir "$LOCK_FILE" || exit 0
 fi
-trap 'rmdir "$LOCK_FILE" 2>/dev/null || true' EXIT
+echo $$ > "$LOCK_FILE/pid"
+trap 'rm -f "$LOCK_FILE/pid"; rmdir "$LOCK_FILE" 2>/dev/null || true' EXIT
 
 # ── resolve identity + auth ───────────────────────────────────────────────────
 GH_TOKEN=$(gh auth token 2>/dev/null) || {
@@ -160,6 +168,55 @@ process_notification() {
             event_label="Approval needed"
             sound="Tink.aiff"
             ;;
+        pull_request_review)
+            if [[ "$subj_type" == "PullRequest" && -n "$subj_url" ]]; then
+                local pr_data pr_merged pr_state
+                pr_data=$(api_get "$subj_url") || pr_data=""
+                if [[ -n "$pr_data" ]]; then
+                    local pr_html
+                    pr_html=$(printf '%s' "$pr_data" | jq -r '.html_url // empty')
+                    [[ -n "$pr_html" ]] && html_url="$pr_html"
+                    pr_merged=$(printf '%s' "$pr_data" | jq -r '.merged')
+                    pr_state=$(printf '%s' "$pr_data" | jq -r '.state')
+
+                    if [[ "$pr_merged" == "true" ]]; then
+                        event_icon="🔀"
+                        event_label="Merged"
+                        sound="Hero.aiff"
+                    elif [[ "$pr_state" == "open" ]]; then
+                        local reviews_data approver changer
+                        reviews_data=$(api_get "${subj_url}/reviews") || reviews_data=""
+                        if [[ -n "$reviews_data" ]]; then
+                            approver=$(printf '%s' "$reviews_data" | jq -r \
+                                '[.[] | select(.state == "APPROVED")] | last | .user.login // empty')
+                            changer=$(printf '%s' "$reviews_data" | jq -r \
+                                '[.[] | select(.state == "CHANGES_REQUESTED")] | last | .user.login // empty')
+                        fi
+                        if [[ -n "$approver" ]]; then
+                            event_icon="✅"
+                            event_label="Approved by ${approver}"
+                            sound="Glass.aiff"
+                        elif [[ -n "$changer" ]]; then
+                            event_icon="🔁"
+                            event_label="Changes requested by ${changer}"
+                            sound="Basso.aiff"
+                        else
+                            event_icon="💬"
+                            event_label="PR review comment"
+                            sound="Tink.aiff"
+                        fi
+                    elif [[ "$pr_state" == "closed" ]]; then
+                        event_icon="🔒"
+                        event_label="PR closed"
+                        sound="Funk.aiff"
+                    fi
+                fi
+            else
+                event_icon="💬"
+                event_label="Review comment"
+                sound="Tink.aiff"
+            fi
+            ;;
         invitation)
             event_icon="📬"
             event_label="Repo invitation"
@@ -277,49 +334,61 @@ process_notification() {
             sound="Sosumi.aiff"
             ;;
         ci_activity)
+            local ci_conclusion_src="" ci_status_src=""
             if [[ -n "$subj_url" ]]; then
                 local ci_data ci_status ci_conclusion
                 ci_data=$(api_get "$subj_url") || ci_data=""
                 if [[ -n "$ci_data" ]]; then
                     ci_status=$(printf '%s' "$ci_data" | jq -r '.status // empty')
                     ci_conclusion=$(printf '%s' "$ci_data" | jq -r '.conclusion // empty')
-                    case "$ci_conclusion" in
-                        failure|timed_out)
-                            event_icon="❌"
-                            event_label="CI failed"
-                            sound="Basso.aiff"
-                            ;;
-                        success)
-                            event_icon="🟢"
-                            event_label="CI passed"
-                            sound="Pop.aiff"
-                            ;;
-                        action_required)
-                            event_icon="⚠️"
-                            event_label="CI action required"
-                            sound="Basso.aiff"
-                            ;;
-                        cancelled)
-                            event_icon="⛔"
-                            event_label="CI cancelled"
-                            sound="Funk.aiff"
-                            ;;
-                        skipped|neutral|stale)
-                            event_icon="⏭️"
-                            event_label="CI skipped"
-                            sound="Ping.aiff"
-                            ;;
-                        *)
-                            if [[ "$ci_status" == "in_progress" ]]; then
-                                event_icon="⚙️"
-                                event_label="CI running"
-                                sound="Ping.aiff"
-                            fi
-                            ;;
-                    esac
+                    ci_conclusion_src="$ci_conclusion"
+                    ci_status_src="$ci_status"
                     html_url="https://github.com/${repo_name}/actions"
                 fi
+            else
+                # subj_url is null for CheckSuite events — parse conclusion from title
+                case "$title" in
+                    *" failed "*)    ci_conclusion_src="failure" ;;
+                    *" succeeded "*) ci_conclusion_src="success" ;;
+                    *" skipped "*)   ci_conclusion_src="skipped" ;;
+                    *" cancelled "*) ci_conclusion_src="cancelled" ;;
+                esac
+                html_url="https://github.com/${repo_name}/actions"
             fi
+            case "$ci_conclusion_src" in
+                failure|timed_out)
+                    event_icon="❌"
+                    event_label="CI failed"
+                    sound="Basso.aiff"
+                    ;;
+                success)
+                    event_icon="🟢"
+                    event_label="CI passed"
+                    sound="Pop.aiff"
+                    ;;
+                action_required)
+                    event_icon="⚠️"
+                    event_label="CI action required"
+                    sound="Basso.aiff"
+                    ;;
+                cancelled)
+                    event_icon="⛔"
+                    event_label="CI cancelled"
+                    sound="Funk.aiff"
+                    ;;
+                skipped|neutral|stale)
+                    event_icon="⏭️"
+                    event_label="CI skipped"
+                    sound="Ping.aiff"
+                    ;;
+                *)
+                    if [[ "$ci_status_src" == "in_progress" ]]; then
+                        event_icon="⚙️"
+                        event_label="CI running"
+                        sound="Ping.aiff"
+                    fi
+                    ;;
+            esac
             ;;
     esac
 
