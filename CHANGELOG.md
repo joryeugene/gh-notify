@@ -11,6 +11,17 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.10.0] - 2026-02-27
+
+### Fixed
+- PR notifications (merges, approvals, state changes) silently dropped after first sight of a thread. GitHub's `/notifications` endpoint returns mutable threads, not immutable events; the daemon now tracks `id|updated_at` compound keys so thread lifecycle updates register as new events.
+- Within-batch dedup collapsed distinct PR lifecycle events (e.g. approval + merge in the same poll window). Batch key now includes `reason` so each event type is processed independently.
+
+### Changed
+- `seen-ids` format migrated from bare notification ID to `id|updated_at`. Old-format files are auto-detected and truncated on daemon startup (old entries can never match the new format).
+
+---
+
 ## [0.9.1] - 2026-02-26
 
 ### Changed
@@ -186,7 +197,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/joryeugene/gh-notify/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/joryeugene/gh-notify/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/joryeugene/gh-notify/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/joryeugene/gh-notify/compare/v0.8.0...v0.8.1
