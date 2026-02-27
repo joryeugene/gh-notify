@@ -18,7 +18,7 @@
 
 ## macOS Notification Permissions
 
-gh-notify ships a custom notification app (`gh-notify-notifier.app`) — a minimal Objective-C `.app` bundle with the KingBee bee icon and bundle ID `com.joryeugene.gh-notify`. It appears in System Settings as **GH Notifier**.
+gh-notify ships a custom notification app (`gh-notify-notifier.app`), a minimal Objective-C `.app` bundle with the KingBee bee icon and bundle ID `com.joryeugene.gh-notify`. It appears in System Settings as **GH Notifier**.
 
 <p align="center">
   <img src="assets/mac-notification.png" alt="gh-notify macOS notification banner" width="380">
