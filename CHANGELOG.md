@@ -11,6 +11,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.11.0] - 2026-02-27
+
+### Added
+- `scripts/demo-scenario.sh`: standalone event writer that populates a realistic 8-event backlog with a fake daemon lock, enabling demo recordings without `gh auth`
+- `demo.tape`: VHS recording script that produces `assets/demo.gif` (~22s animated GIF showing color-coded events arriving, stats bar, sound toggle, quit)
+- `assets/demo.gif`: animated terminal recording for the README
+
+### Changed
+- README hero section: replaced stale single-line text mockup (pre-v0.9.0 format) with animated GIF showing the live bar
+- `just lint` now includes `scripts/demo-scenario.sh`
+
+---
+
 ## [0.10.0] - 2026-02-27
 
 ### Fixed
@@ -197,7 +210,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/joryeugene/gh-notify/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/joryeugene/gh-notify/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/joryeugene/gh-notify/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/joryeugene/gh-notify/compare/v0.8.1...v0.9.0
