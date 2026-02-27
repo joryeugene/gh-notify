@@ -11,6 +11,18 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.9.1] - 2026-02-26
+
+### Changed
+- `[t]` test notification key removed; use `just notify "test"` from the repo instead
+- README: add macOS notification screenshot
+
+### Changed (internal)
+- `just release` now creates a draft GitHub release automatically via `gh release create --draft`
+- `.claude/` added to `.gitignore`
+
+---
+
 ## [0.9.0] - 2026-02-26
 
 ### Changed
@@ -174,7 +186,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/joryeugene/gh-notify/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/joryeugene/gh-notify/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/joryeugene/gh-notify/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/joryeugene/gh-notify/compare/v0.7.0...v0.8.0
