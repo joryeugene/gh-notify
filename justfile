@@ -5,7 +5,7 @@ default:
 
 # Lint all shell scripts with shellcheck
 lint:
-    shellcheck scripts/gh-notify-daemon.sh scripts/gh-notify-bar.sh install.sh
+    shellcheck scripts/gh-notify-daemon.sh scripts/gh-notify-bar.sh scripts/demo-scenario.sh install.sh
 
 # Copy scripts to ~/.config/gh-notify/ — fast dev deploy, no prereq checks
 # Use after any edit to scripts/; press [r] in the bar to reload

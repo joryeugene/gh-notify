@@ -10,23 +10,11 @@
   <img src="https://img.shields.io/badge/requires-gh%20CLI-blue.svg" alt="requires gh CLI">
 </p>
 
-<table><tr>
-<td>
-  <h3>Real-time GitHub PR notifications with macOS sounds</h3>
-  <p>Background daemon that polls GitHub every 30s, fires event-specific sounds and macOS popups, and streams a live log into an interactive bottom bar. Run it in any terminal pane.</p>
-</td>
-<td align="center">
-<pre>
-[12:04] ✅ Approved - Fix auth (org/repo)
-[12:07] 💬 Comment - Add retry logic (org/repo)
-[12:09] 🔀 Merged - Update deps (org/repo)
-[12:11] 🔔 Activity - CI passed (org/repo)
-              ·:·[ gh-notify · 4 ]·:·
-  ✅ 1  🔀 1  💬 1  │  org/repo(4)
-  [s]snd(ON)  [c]clr  [r]rst  [o]PR  [q]quit
-</pre>
-</td>
-</tr></table>
+**Real-time GitHub PR notifications with macOS sounds.** Background daemon polls GitHub every 30s, fires event-specific sounds and macOS popups, and streams a live log into an interactive bottom bar.
+
+<p align="center">
+  <img src="assets/demo.gif" alt="gh-notify demo" width="600">
+</p>
 
 ## macOS Notification Permissions
 
