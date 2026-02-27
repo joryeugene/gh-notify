@@ -16,6 +16,12 @@ mkdir -p "$STATE_DIR"
 [[ -f "$SFX_STATE" ]] || echo "ON" > "$SFX_STATE"
 touch "$EVENTS_LOG" "$SEEN_IDS"
 
+# Migrate seen-ids: v0.9.1→v0.10 changed format from bare id to id|updated_at.
+# Old entries can never match, so truncate if any old-format lines detected.
+if [[ -s "$SEEN_IDS" ]] && grep -qv '|' "$SEEN_IDS" 2>/dev/null; then
+    : > "$SEEN_IDS"
+fi
+
 # ── prevent duplicate instances ───────────────────────────────────────────────
 LOCK_FILE="${STATE_DIR}/.daemon.lock"
 if ! mkdir "$LOCK_FILE" 2>/dev/null; then
@@ -127,12 +133,14 @@ process_notification() {
     repo_name=$(printf '%s' "$notif" | jq -r '.repository.full_name')
     subj_url=$(printf '%s' "$notif" | jq -r '.subject.url // empty')
     subj_type=$(printf '%s' "$notif" | jq -r '.subject.type')
+    updated_at=$(printf '%s' "$notif" | jq -r '.updated_at // empty')
 
-    # Skip already-seen
-    if grep -qF "$id" "$SEEN_IDS" 2>/dev/null; then
+    # Skip already-seen (compound key: id|updated_at catches thread updates)
+    local seen_key="${id}|${updated_at}"
+    if grep -qF "$seen_key" "$SEEN_IDS" 2>/dev/null; then
         return
     fi
-    printf '%s\n' "$id" >> "$SEEN_IDS"
+    printf '%s\n' "$seen_key" >> "$SEEN_IDS"
     seen_count=$(wc -l < "$SEEN_IDS" | tr -d ' ')
     if [[ "$seen_count" -gt 10000 ]]; then
         tail -5000 "$SEEN_IDS" > "${SEEN_IDS}.tmp" && mv "${SEEN_IDS}.tmp" "$SEEN_IDS"
@@ -455,10 +463,11 @@ while true; do
         notif=$(printf '%s\n' "$body" | jq ".[${i}]")
 
         # Within-batch dedup: collapse same repo+title (e.g. 20x skipped workflow runs)
-        batch_key=$(printf '%s' "$notif" | jq -r '"\(.repository.full_name):\(.subject.title)"')
+        batch_key=$(printf '%s' "$notif" | jq -r '"\(.repository.full_name):\(.subject.title):\(.reason)"')
         if [[ -v batch_dedup["$batch_key"] ]]; then
             dup_id=$(printf '%s' "$notif" | jq -r '.id // empty')
-            [[ -n "$dup_id" ]] && printf '%s\n' "$dup_id" >> "$SEEN_IDS"
+            dup_updated=$(printf '%s' "$notif" | jq -r '.updated_at // empty')
+            [[ -n "$dup_id" ]] && printf '%s\n' "${dup_id}|${dup_updated}" >> "$SEEN_IDS"
             continue
         fi
         batch_dedup["$batch_key"]=1
