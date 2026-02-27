@@ -23,7 +23,7 @@
 [12:11] 🔔 Activity - CI passed (org/repo)
               ·:·[ gh-notify · 4 ]·:·
   ✅ 1  🔀 1  💬 1  │  org/repo(4)
-  [s]snd(ON)  [c]clr  [r]rst  [o]PR  [t]test  [q]quit
+  [s]snd(ON)  [c]clr  [r]rst  [o]PR  [q]quit
 </pre>
 </td>
 </tr></table>
@@ -43,7 +43,7 @@ open "x-apple.systempreferences:com.apple.preference.notifications"
 
 **After running the installer:** If the bar was already running, it was stopped automatically. Relaunch with `gh-notify`.
 
-**If banners stop appearing:** Check that Do Not Disturb / Focus mode is off (Control Center, top-right menu bar). Press `[t]` in the bar to send a test notification.
+**If banners stop appearing:** Check that Do Not Disturb / Focus mode is off (Control Center, top-right menu bar). Run `just notify "test"` from the repo to send a test notification.
 
 ---
 
@@ -97,7 +97,6 @@ All sounds are built-in macOS system sounds. No dependencies beyond the prereqs.
 | `c` | Clear the event log |
 | `r` | Restart daemon (if crashed) |
 | `o` | Open last event in browser |
-| `t` | Send test notification (opens System Settings on failure) |
 | `q` | Quit bar (also stops daemon) |
 
 ---

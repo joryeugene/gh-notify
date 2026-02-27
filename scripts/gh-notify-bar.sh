@@ -153,7 +153,7 @@ while true; do
         esac
     fi
 
-    printf '  \033[1m[s]\033[0msnd(%s)  \033[1m[c]\033[0mclr  \033[1m[r]\033[0mrst  \033[1m[o]\033[0m%s  \033[1m[t]\033[0mtest  \033[1m[q]\033[0mquit\n' \
+    printf '  \033[1m[s]\033[0msnd(%s)  \033[1m[c]\033[0mclr  \033[1m[r]\033[0mrst  \033[1m[o]\033[0m%s  \033[1m[q]\033[0mquit\n' \
         "$local_sfx" "$_open_label"
 
     # Read a single keypress (2s timeout, no echo)
@@ -191,23 +191,6 @@ while true; do
                 _url="https://github.com/notifications"
             fi
             open "$_url" 2>/dev/null || true
-            ;;
-        t|T)
-            _custom="${HOME}/.config/gh-notify/gh-notify-notifier.app/Contents/MacOS/gh-notify-notifier"
-            _targs=(-title "gh-notify" -message "Test notification from gh-notify")
-            _sent=false
-            if [[ -x "$_custom" ]]; then
-                "$_custom" "${_targs[@]}" 2>/dev/null && _sent=true || true
-            fi
-            if ! $_sent; then
-                osascript -e 'display notification "Test notification from gh-notify" with title "gh-notify"' 2>/dev/null && _sent=true || true
-            fi
-            if $_sent; then
-                _status_msg="Test sent - check top-right corner"
-            else
-                open "x-apple.systempreferences:com.apple.preference.notifications" 2>/dev/null || true
-                _status_msg="⚠  no notifier - opened System Settings > Notifications"
-            fi
             ;;
         q|Q)
             break
