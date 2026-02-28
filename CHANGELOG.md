@@ -11,6 +11,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [0.11.1] - 2026-02-28
+
+### Changed (internal)
+- Bar: extracted 9 inline ANSI escape codes into named color constants (`C_GREEN`, `C_MAGENTA`, etc.)
+- Daemon: extracted `_pr_state_event()` helper, deduplicating PR review logic shared by `pull_request_review` and `author` reason handlers (net -27 lines)
+- Daemon: `seen-ids` deduped on boot via `sort -u` to prevent file bloat
+
+### Fixed
+- Bar: 📬 repo invitation events now render cyan (were falling through to dim)
+- Daemon: `send_notification` escapes backslashes and double-quotes instead of stripping/replacing them, fixing osascript rendering of titles containing those characters
+
+---
+
 ## [0.11.0] - 2026-02-27
 
 ### Added
@@ -210,7 +223,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.11.1...HEAD
+[0.11.1]: https://github.com/joryeugene/gh-notify/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/joryeugene/gh-notify/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/joryeugene/gh-notify/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/joryeugene/gh-notify/compare/v0.9.0...v0.9.1
