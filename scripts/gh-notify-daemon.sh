@@ -165,6 +165,42 @@ _pr_state_event() {
     fi
 }
 
+# ── latest-comment review check ──────────────────────────────────────────
+# Fetches subject.latest_comment_url; if it points to a PR review, overrides
+# event_icon/event_label/sound/html_url with the review state.
+# Returns 0 if a review was found and handled, 1 otherwise.
+# $1=latest_comment_url  $2=self_filter (optional; skips self-reviews)
+_check_pr_review() {
+    local comment_url="$1" self_filter="${2:-}"
+    [[ -z "$comment_url" ]] && return 1
+    [[ "$comment_url" != */pulls/*/reviews/* ]] && return 1
+
+    local review_data review_state reviewer review_html
+    review_data=$(api_get "$comment_url") || return 1
+    [[ -z "$review_data" ]] && return 1
+
+    review_state=$(printf '%s' "$review_data" | jq -r '.state // empty')
+    reviewer=$(printf '%s' "$review_data" | jq -r '.user.login // empty')
+    [[ -n "$self_filter" && "$reviewer" == "$self_filter" ]] && return 1
+
+    review_html=$(printf '%s' "$review_data" | jq -r '.html_url // empty')
+    [[ -n "$review_html" ]] && html_url="$review_html"
+
+    case "$review_state" in
+        APPROVED)
+            event_icon="✅"; event_label="Approved by ${reviewer}"; sound="Glass.aiff" ;;
+        CHANGES_REQUESTED)
+            event_icon="🔁"; event_label="Changes requested by ${reviewer}"; sound="Basso.aiff" ;;
+        COMMENTED)
+            event_icon="💬"; event_label="Review by ${reviewer}"; sound="Tink.aiff" ;;
+        DISMISSED)
+            event_icon="⏪"; event_label="Review dismissed"; sound="Funk.aiff" ;;
+        *)
+            return 1 ;;
+    esac
+    return 0
+}
+
 # ── process a single notification ─────────────────────────────────────────────
 process_notification() {
     local notif="$1"
@@ -360,6 +396,15 @@ process_notification() {
             esac
             ;;
     esac
+
+    # For PullRequest subjects, check latest_comment_url for review state.
+    # Overrides reason-based defaults (e.g. "Assigned") when a review triggered the update.
+    if [[ "$subj_type" == "PullRequest" ]]; then
+        local latest_comment_url self_filter=""
+        latest_comment_url=$(printf '%s' "$notif" | jq -r '.subject.latest_comment_url // empty')
+        [[ "$reason" == "author" ]] && self_filter="$SELF"
+        _check_pr_review "$latest_comment_url" "$self_filter" || true
+    fi
 
     log_event "$event_icon" "$event_label" "$title" "$repo_name" "$html_url"
     queue_sound "$sound"

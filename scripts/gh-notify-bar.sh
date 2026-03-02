@@ -21,7 +21,7 @@ touch "$EVENTS_LOG"
 C_GREEN='\033[1;32m'   # ✅ approved, 🟢 CI pass
 C_MAGENTA='\033[1;35m' # 🔀 merged, 🛡️ security
 C_CYAN='\033[1;36m'    # 💬 comment, 👥 team, 📬 invite
-C_YELLOW='\033[1;33m'  # 👀 review req, ⚠ warning, 🔁 changes, 🔒🔓 state, 🚦 approval
+C_YELLOW='\033[1;33m'  # 👀 review req, ⚠ warning, 🔁 changes, 🔒🔓 state, 🚦 approval, ⏪ dismissed
 C_BLUE='\033[1;34m'    # 📌 assigned
 C_RED='\033[1;31m'     # ❌ CI fail
 C_RED_DIM='\033[0;31m' # ⛔ CI cancelled (intentionally less prominent)
@@ -98,6 +98,7 @@ while true; do
                 *"🛡"*)  printf "${C_MAGENTA}%s${C_RESET}\n" "$_display" ;;
                 *"🚦"*)  printf "${C_YELLOW}%s${C_RESET}\n"  "$_display" ;;
                 *"⏭️"*) printf "${C_DIM}%s${C_RESET}\n"     "$_display" ;;
+                *"⏪"*) printf "${C_YELLOW}%s${C_RESET}\n"  "$_display" ;;
                 *"📬"*) printf "${C_CYAN}%s${C_RESET}\n"    "$_display" ;;
                 *"🔔"*) printf "${C_DIM}%s${C_RESET}\n"     "$_display" ;;
                 *)       printf "${C_DIM}%s${C_RESET}\n"     "$_display" ;;
