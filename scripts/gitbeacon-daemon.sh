@@ -180,9 +180,19 @@ process_notification() {
     subj_type=$(printf '%s' "$notif" | jq -r '.subject.type')
     updated_at=$(printf '%s' "$notif" | jq -r '.updated_at // empty')
 
-    # Skip already-seen (compound key: id|updated_at catches thread updates)
-    local seen_key="${id}|${updated_at}"
-    if grep -qF "$seen_key" "$SEEN_IDS" 2>/dev/null; then
+    # Skip already-seen.
+    # One-shot events (review_requested, assign, invitation, approval_requested) dedup on bare
+    # id — GitHub bumps updated_at on these whenever the PR thread is touched, even with no
+    # new action. Re-fire events use id|updated_at so genuine updates still surface.
+    # Genuine re-requests get a new notification ID from GitHub, so bare-id dedup still fires.
+    local seen_key
+    case "$reason" in
+        review_requested|assign|invitation|approval_requested)
+            seen_key="${id}" ;;
+        *)
+            seen_key="${id}|${updated_at}" ;;
+    esac
+    if grep -qxF "$seen_key" "$SEEN_IDS" 2>/dev/null; then
         return
     fi
     printf '%s\n' "$seen_key" >> "$SEEN_IDS"
