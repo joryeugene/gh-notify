@@ -1,39 +1,39 @@
-# gh-notify
+# gitbeacon
 
 <p align="center">
-  <img src="assets/icon.svg" alt="gh-notify" width="80" height="80">
+  <img src="assets/icon.svg" alt="gitbeacon" width="80" height="80">
 </p>
 
 <p align="center">
-  <a href="https://github.com/joryeugene/gh-notify/blob/main/LICENSE"><img src="https://img.shields.io/github/license/joryeugene/gh-notify.svg" alt="MIT License"></a>
+  <a href="https://github.com/joryeugene/gitbeacon/blob/main/LICENSE"><img src="https://img.shields.io/github/license/joryeugene/gitbeacon.svg" alt="MIT License"></a>
   <img src="https://img.shields.io/badge/platform-macOS-lightgrey.svg" alt="macOS">
   <img src="https://img.shields.io/badge/requires-gh%20CLI-blue.svg" alt="requires gh CLI">
 </p>
 
-**Real-time GitHub PR notifications with macOS sounds.** Background daemon polls GitHub every 30s, fires event-specific sounds and macOS popups, and streams a live log into an interactive bottom bar.
+Stay in the hive. macOS-native GitHub notifications with a live terminal bar.
 
 <p align="center">
-  <img src="assets/demo.gif" alt="gh-notify demo" width="600">
+  <img src="assets/demo.gif" alt="gitbeacon demo" width="600">
 </p>
 
 ## macOS Notification Permissions
 
-gh-notify ships a custom notification app (`gh-notify-notifier.app`), a minimal Objective-C `.app` bundle with the KingBee bee icon and bundle ID `com.joryeugene.gh-notify`. It appears in System Settings as **GH Notifier**.
+gitbeacon ships a custom notification app (`gitbeacon-notifier.app`), a minimal Objective-C `.app` bundle with the KingBee bee icon and bundle ID `com.joryeugene.gitbeacon`. It appears in System Settings as **GitBeacon**.
 
 <p align="center">
-  <img src="assets/mac-notification.png" alt="gh-notify macOS notification banner" width="380">
+  <img src="assets/mac-notification.png" alt="gitbeacon macOS notification banner" width="380">
 </p>
 
 **Why a custom app:** `osascript display notification` requires the calling process to be attached to the macOS GUI session. Background daemons run in a detached session with no GUI attachment — notifications sent via `osascript` from a detached process are silently dropped. A proper `.app` bundle with `UNUserNotificationCenter` works from any context, including background daemons.
 
-**One-time setup:** On first use, macOS opens System Settings to request notification permission. Find **GH Notifier** in the list and set the style to **Banners** or **Alerts**. The first launch triggers a permission prompt — click **Allow**.
+**One-time setup:** On first use, macOS opens System Settings to request notification permission. Find **GitBeacon** in the list and set the style to **Banners** or **Alerts**. The first launch triggers a permission prompt — click **Allow**.
 
 ```bash
 # Jump directly to the Notifications pane:
 open "x-apple.systempreferences:com.apple.preference.notifications"
 ```
 
-**After running the installer:** If the bar was already running, it was stopped automatically. Relaunch with `gh-notify`.
+**After running the installer:** If the bar was already running, it was stopped automatically. Relaunch with `gitbeacon`.
 
 **If banners stop appearing:** Check that Do Not Disturb / Focus mode is off (Control Center, top-right menu bar). Run `just notify "test"` from the repo to send a test notification.
 
@@ -44,12 +44,12 @@ open "x-apple.systempreferences:com.apple.preference.notifications"
 **Prerequisites** (one-time):
 ```bash
 brew install gh jq
-# tmux is optional — gh-notify runs in any terminal pane
+# tmux is optional — gitbeacon runs in any terminal pane
 gh auth login
 ```
 
-1. **Install**: `curl -fsSL https://raw.githubusercontent.com/joryeugene/gh-notify/main/install.sh | bash`
-2. **Launch**: `gh-notify` (in any terminal pane)
+1. **Install**: `curl -fsSL https://raw.githubusercontent.com/joryeugene/gitbeacon/main/install.sh | bash`
+2. **Launch**: `gitbeacon` (in any terminal pane)
 
 ---
 
@@ -98,7 +98,7 @@ All sounds are built-in macOS system sounds. No dependencies beyond the prereqs.
 ```mermaid
 flowchart LR
     subgraph loop["Poll Loop"]
-        BAR[gh-notify-bar.sh] -->|spawns| DAEMON[gh-notify-daemon.sh]
+        BAR[gitbeacon-bar.sh] -->|spawns| DAEMON[gitbeacon-daemon.sh]
         DAEMON -->|If-Modified-Since| POLL{GET /notifications}
         POLL -->|304 Not Modified| SLEEP[sleep 30]
         SLEEP --> DAEMON
@@ -118,7 +118,7 @@ flowchart LR
         Q["priority queue\nHero › Glass › Ping › Tink"] --> GATE{sfx-state}
         GATE -->|ON| SOUND[afplay]
         GATE -->|OFF| MUTE[silent]
-        Q --> POPUP[gh-notify-notifier]
+        Q --> POPUP[gitbeacon-notifier]
         Q --> LOG[events.log]
     end
 
@@ -140,20 +140,20 @@ The daemon uses HTTP conditional requests (`If-Modified-Since` / `304 Not Modifi
 **Without the installer:**
 
 ```bash
-mkdir -p ~/.config/gh-notify
-cp scripts/gh-notify-daemon.sh ~/.config/gh-notify/
-cp scripts/gh-notify-bar.sh    ~/.config/gh-notify/
-chmod +x ~/.config/gh-notify/*.sh
-echo "ON" > ~/.config/gh-notify/sfx-state
-touch ~/.config/gh-notify/events.log ~/.config/gh-notify/seen-ids
+mkdir -p ~/.config/gitbeacon
+cp scripts/gitbeacon-daemon.sh ~/.config/gitbeacon/
+cp scripts/gitbeacon-bar.sh    ~/.config/gitbeacon/
+chmod +x ~/.config/gitbeacon/*.sh
+echo "ON" > ~/.config/gitbeacon/sfx-state
+touch ~/.config/gitbeacon/events.log ~/.config/gitbeacon/seen-ids
 
 # Install CLI command
 mkdir -p ~/.local/bin
-cat > ~/.local/bin/gh-notify << 'EOF'
+cat > ~/.local/bin/gitbeacon << 'EOF'
 #!/usr/bin/env bash
-exec bash "${HOME}/.config/gh-notify/gh-notify-bar.sh" "$@"
+exec bash "${HOME}/.config/gitbeacon/gitbeacon-bar.sh" "$@"
 EOF
-chmod +x ~/.local/bin/gh-notify
+chmod +x ~/.local/bin/gitbeacon
 ```
 
 **Custom sesh integration:**
@@ -162,15 +162,15 @@ Add one line to your existing briefing script:
 
 ```bash
 # Replace your existing right-pane split with:
-tmux split-window -v -l 12% 'gh-notify'
+tmux split-window -v -l 12% 'gitbeacon'
 tmux select-pane -t :.1
 ```
 
-**Full sesh + gh-dash + gh-notify example:**
+**Full sesh + gh-dash + gitbeacon example:**
 
 ```bash
 #!/usr/bin/env bash
-# Example: sesh briefing.sh with gh-notify bar
+# Example: sesh briefing.sh with gitbeacon bar
 # Drop into ~/.config/sesh/scripts/briefing.sh (or wherever your sesh script lives)
 
 tmux rename-window -t 1 "BRIEFING"
@@ -180,8 +180,8 @@ printf '\033[1;36m'
 curl -s --max-time 3 "wttr.in?format=%l:+%c+%t+%w" 2>/dev/null || true
 printf '\033[0m\n'
 
-# Bottom pane: gh-notify bar (live PR notifications + daemon)
-tmux split-window -v -l 12% 'gh-notify'
+# Bottom pane: gitbeacon bar (live PR notifications + daemon)
+tmux split-window -v -l 12% 'gitbeacon'
 
 # Top pane: gh-dash
 tmux select-pane -t :.1
@@ -191,7 +191,7 @@ exec gh dash
 **Run the bar in any terminal pane (tmux example):**
 
 ```bash
-gh-notify
+gitbeacon
 ```
 
 The bar automatically starts the daemon. When the bar exits, it kills the daemon.
@@ -201,7 +201,7 @@ The bar automatically starts the daemon. When the bar exits, it kills the daemon
 <details>
 <summary><strong>Configuration</strong></summary>
 
-**State files** — all in `~/.config/gh-notify/`:
+**State files** — all in `~/.config/gitbeacon/`:
 
 | File | Purpose |
 |------|---------|
@@ -211,11 +211,11 @@ The bar automatically starts the daemon. When the bar exits, it kills the daemon
 
 **Poll interval:**
 
-Edit `gh-notify-daemon.sh` and change the `sleep 30` at the bottom of the loop. The default is 30 seconds. Going below 15 seconds is not recommended (GitHub rate limit is 5000 requests/hour; 304 responses don't count toward that limit).
+Edit `gitbeacon-daemon.sh` and change the `sleep 30` at the bottom of the loop. The default is 30 seconds. Going below 15 seconds is not recommended (GitHub rate limit is 5000 requests/hour; 304 responses don't count toward that limit).
 
 **Sounds:**
 
-Edit the `case "$reason"` block in `gh-notify-daemon.sh` to swap any sound file. All built-in macOS sounds are in `/System/Library/Sounds/`. Test one with:
+Edit the `case "$reason"` block in `gitbeacon-daemon.sh` to swap any sound file. All built-in macOS sounds are in `/System/Library/Sounds/`. Test one with:
 
 ```bash
 afplay /System/Library/Sounds/Glass.aiff
@@ -233,18 +233,18 @@ Change `12%` in the `split-window` command to any percentage or fixed line count
 
 ```bash
 # 1. Launch the bar
-gh-notify
+gitbeacon
 # Watching for GitHub notifications... (bottom pane)
 
 # 2. Test sound
 afplay /System/Library/Sounds/Glass.aiff
 
 # 3. Test popup (uses GH Notifier custom app with bee icon)
-~/.config/gh-notify/gh-notify-notifier.app/Contents/MacOS/gh-notify-notifier \
+~/.config/gitbeacon/gitbeacon-notifier.app/Contents/MacOS/gitbeacon-notifier \
     -title "GH Notifier" -message "Test"
 
 # 4. Check daemon is running
-pgrep -f gh-notify-daemon && echo "daemon running"
+pgrep -f gitbeacon-daemon && echo "daemon running"
 
 # 5. Live trigger
 # Open a draft PR, request a review, approve it — bar updates within 30s
@@ -257,27 +257,27 @@ pgrep -f gh-notify-daemon && echo "daemon running"
 **No events appearing in the bar**
 ```bash
 # Check daemon is running
-pgrep -f gh-notify-daemon && echo "running" || echo "not running"
+pgrep -f gitbeacon-daemon && echo "running" || echo "not running"
 
 # Check GitHub auth
 gh auth status
 
 # Check events.log for content
-cat ~/.config/gh-notify/events.log
+cat ~/.config/gitbeacon/events.log
 ```
 
 **Bar shows events but daemon died mid-session**
 ```bash
 # Kill any orphaned daemon
-pkill -f gh-notify-daemon
+pkill -f gitbeacon-daemon
 # Then relaunch
-gh-notify
+gitbeacon
 ```
 
 **Sound not playing**
 ```bash
 # Check current sound state
-cat ~/.config/gh-notify/sfx-state   # should print ON
+cat ~/.config/gitbeacon/sfx-state   # should print ON
 
 # Test sound manually
 afplay /System/Library/Sounds/Glass.aiff
@@ -289,7 +289,7 @@ afplay /System/Library/Sounds/Glass.aiff
 ```bash
 # The daemon detects and reclaims stale locks automatically.
 # If you suspect a stuck state, force-clear manually:
-rm -rf ~/.config/gh-notify/.daemon.lock
+rm -rf ~/.config/gitbeacon/.daemon.lock
 ```
 
 **Notifications stop after a long session**
@@ -303,14 +303,14 @@ If you hit the limit, the daemon sleeps until the window resets (check with `gh 
 
 ```bash
 # Stop the bar and daemon first (press q in the bar, or:)
-pkill -f gh-notify-daemon
-pkill -f gh-notify-bar
+pkill -f gitbeacon-daemon
+pkill -f gitbeacon-bar
 
 # Optional: back up seen-ids if you plan to reinstall
 # Without it, all previously-seen notifications re-fire on first poll after reinstall
-# cp ~/.config/gh-notify/seen-ids ~/seen-ids.bak
+# cp ~/.config/gitbeacon/seen-ids ~/seen-ids.bak
 
 # Remove scripts, state, and CLI wrapper
-rm -rf ~/.config/gh-notify
-rm -f ~/.local/bin/gh-notify
+rm -rf ~/.config/gitbeacon
+rm -f ~/.local/bin/gitbeacon
 ```
