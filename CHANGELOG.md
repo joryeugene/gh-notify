@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to gh-notify are documented here.
+All notable changes to gitbeacon are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [Semantic Versioning](https://semver.org/).
@@ -8,6 +8,19 @@ Versions follow [Semantic Versioning](https://semver.org/).
 ---
 
 ## [Unreleased]
+
+---
+
+## [1.0.0] - 2026-03-04
+
+### Changed (breaking)
+- Project renamed **gh-notify → gitbeacon**: CLI command (`gitbeacon`), config directory (`~/.config/gitbeacon/`), script names (`gitbeacon-daemon.sh`, `gitbeacon-bar.sh`), notifier app (`gitbeacon-notifier.app`), and bundle ID (`com.joryeugene.gitbeacon`)
+- macOS notification permission prompt now shows **GitBeacon** instead of GH Notifier
+- GitHub repo moved to `joryeugene/gitbeacon` (old URL auto-redirects)
+
+### Fixed
+- Duplicate `review_requested`, `assign`, `invitation`, and `approval_requested` events: these one-shot notifications were re-firing on every PR update because GitHub bumps `updated_at` on all unread thread notifications whenever the PR is touched. Dedup now uses bare notification ID (not `id|updated_at`) for these reason types
+- PR review notifications showing as **Assigned** instead of actual review state (Approved / Changes requested) — `_pr_state_event()` now called with `no_fallback=1` for `assign` and `comment` reasons so the caller's default label is preserved when no review state is found
 
 ---
 
@@ -223,8 +236,9 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/joryeugene/gh-notify/compare/v0.11.1...HEAD
-[0.11.1]: https://github.com/joryeugene/gh-notify/compare/v0.11.0...v0.11.1
+[Unreleased]: https://github.com/joryeugene/gitbeacon/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/joryeugene/gitbeacon/compare/v0.11.1...v1.0.0
+[0.11.1]: https://github.com/joryeugene/gitbeacon/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/joryeugene/gh-notify/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/joryeugene/gh-notify/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/joryeugene/gh-notify/compare/v0.9.0...v0.9.1
