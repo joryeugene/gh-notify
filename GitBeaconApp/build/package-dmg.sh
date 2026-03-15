@@ -17,6 +17,9 @@ mkdir -p "$DMG_DIR"
 cp -R "$APP_DIR" "$DMG_DIR/"
 ln -s /Applications "$DMG_DIR/Applications"
 
+# Strip quarantine so Gatekeeper doesn't block on first launch
+xattr -cr "$DMG_DIR/GitBeacon.app"
+
 hdiutil create -volname "GitBeacon" \
     -srcfolder "$DMG_DIR" \
     -ov -format UDZO \
