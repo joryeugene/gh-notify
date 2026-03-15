@@ -22,6 +22,10 @@ For users who prefer a native app over the terminal, gitbeacon ships as a macOS 
 
 The app shows a bell icon in the menu bar. Click it to see a popover with your recent GitHub notification events. The same proven daemon runs underneath. Click any event row to open it in your browser.
 
+<p align="center">
+  <img src="assets/menubar.png" alt="GitBeacon menu bar popover" width="380">
+</p>
+
 **Build from source:**
 
 ```bash

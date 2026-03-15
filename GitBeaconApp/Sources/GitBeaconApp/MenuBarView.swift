@@ -97,6 +97,7 @@ struct MenuBarView: View {
                 .font(.caption)
             }
             .buttonStyle(.plain)
+            .focusable(false)
 
             Spacer()
 
@@ -105,6 +106,7 @@ struct MenuBarView: View {
             }
             .buttonStyle(.plain)
             .font(.caption)
+            .focusable(false)
 
             Divider()
                 .frame(height: 12)
@@ -115,6 +117,7 @@ struct MenuBarView: View {
             }
             .buttonStyle(.plain)
             .font(.caption)
+            .focusable(false)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
