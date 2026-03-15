@@ -9,6 +9,10 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.1.0] - 2026-03-15
+
 ### Added
 - **macOS menu bar app** (`GitBeaconApp/`): native SwiftUI `MenuBarExtra` that wraps the daemon. Click the bell icon to see recent events, toggle sound, and quit. No terminal required.
   - Event log watcher using kqueue (`DispatchSource`) with 5-second timer fallback for file rotation
@@ -17,6 +21,7 @@ Versions follow [Semantic Versioning](https://semver.org/).
   - `build/package-app.sh` assembles a proper `.app` bundle with `Info.plist` and ad-hoc codesigning
   - `build/package-dmg.sh` creates a distributable DMG with drag-to-Applications install
 - justfile recipes: `build-app` (universal binary), `package-app`, `package-dmg`
+- CI workflow (`.github/workflows/ci.yml`): shellcheck lint + swift build on macos-latest
 - Daemon spawned with Homebrew bash 5 (not `/bin/bash` 3.2) to support associative arrays and `-v` tests used by the daemon script
 
 ---
@@ -246,7 +251,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/joryeugene/gitbeacon/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/joryeugene/gitbeacon/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/joryeugene/gitbeacon/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/joryeugene/gitbeacon/compare/v0.11.1...v1.0.0
 [0.11.1]: https://github.com/joryeugene/gitbeacon/compare/v0.11.0...v0.11.1
 [0.11.0]: https://github.com/joryeugene/gh-notify/compare/v0.10.0...v0.11.0

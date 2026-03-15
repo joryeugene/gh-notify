@@ -198,5 +198,6 @@ release version:
     git push origin main "v{{version}}"
     echo "→ Creating draft release on GitHub..."
     NOTES=$(awk '/^## \[{{version}}\]/{found=1; next} found && /^---/{exit} found{print}' CHANGELOG.md)
-    gh release create "v{{version}}" --title "v{{version}}" --draft --notes "$NOTES"
+    gh release create "v{{version}}" --title "v{{version}}" --draft --notes "$NOTES" \
+        GitBeaconApp/.build/GitBeacon.dmg
     echo "✓  Draft release ready: https://github.com/joryeugene/gitbeacon/releases"
