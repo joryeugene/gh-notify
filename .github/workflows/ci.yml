@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew install shellcheck
+      - run: shellcheck scripts/gitbeacon-daemon.sh scripts/gitbeacon-bar.sh scripts/demo-scenario.sh install.sh
+
+  build-app:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cd GitBeaconApp && swift build

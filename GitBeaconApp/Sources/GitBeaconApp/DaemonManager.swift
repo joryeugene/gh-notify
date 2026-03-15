@@ -9,6 +9,7 @@ final class DaemonManager: ObservableObject {
 
     private var process: Process?
     private var healthTimer: Timer?
+    private var isSpawning = false
 
     private let stateDir: String
     private let daemonScriptPath: String
@@ -85,6 +86,10 @@ final class DaemonManager: ObservableObject {
     // MARK: - Private
 
     private func spawnDaemon() {
+        guard !isSpawning else { return }
+        isSpawning = true
+        defer { isSpawning = false }
+
         guard FileManager.default.fileExists(atPath: daemonScriptPath) else {
             DispatchQueue.main.async { [weak self] in
                 self?.errorMessage = "Daemon script not found"
@@ -137,6 +142,7 @@ final class DaemonManager: ObservableObject {
                     self.isRunning = true
                 } else {
                     self.isRunning = false
+                    self.spawnDaemon()
                 }
             }
         }
