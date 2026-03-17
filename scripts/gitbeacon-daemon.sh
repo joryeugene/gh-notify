@@ -16,9 +16,10 @@ mkdir -p "$STATE_DIR"
 [[ -f "$SFX_STATE" ]] || echo "ON" > "$SFX_STATE"
 touch "$EVENTS_LOG" "$SEEN_IDS"
 
-# Migrate seen-ids: v0.9.1→v0.10 changed format from bare id to id|updated_at.
-# Old entries can never match, so truncate if any old-format lines detected.
-if [[ -s "$SEEN_IDS" ]] && grep -qv '|' "$SEEN_IDS" 2>/dev/null; then
+# Migrate seen-ids: v0.9.1→v0.10 changed format from bare id to compound keys.
+# Truncate only if the file contains NO compound entries (pure old bare-id format).
+# Mixed format (bare-id + compound) is intentional from v1.0.0+ and must be preserved.
+if [[ -s "$SEEN_IDS" ]] && ! grep -q '|' "$SEEN_IDS" 2>/dev/null; then
     : > "$SEEN_IDS"
 fi
 [[ -s "$SEEN_IDS" ]] && sort -u -o "$SEEN_IDS" "$SEEN_IDS"
@@ -179,16 +180,25 @@ process_notification() {
     subj_url=$(printf '%s' "$notif" | jq -r '.subject.url // empty')
     subj_type=$(printf '%s' "$notif" | jq -r '.subject.type')
     updated_at=$(printf '%s' "$notif" | jq -r '.updated_at // empty')
+    latest_comment_url=$(printf '%s' "$notif" | jq -r '.subject.latest_comment_url // empty')
 
-    # Skip already-seen.
-    # One-shot events (review_requested, assign, invitation, approval_requested) dedup on bare
-    # id — GitHub bumps updated_at on these whenever the PR thread is touched, even with no
-    # new action. Re-fire events use id|updated_at so genuine updates still surface.
-    # Genuine re-requests get a new notification ID from GitHub, so bare-id dedup still fires.
+    # Skip already-seen. Three dedup tiers:
+    # 1. One-shot reasons: bare id. These events don't recur; updated_at bumps from other
+    #    thread activity must not re-fire them.
+    # 2. Content-update reasons (comment, pull_request_review, author): id|latest_comment_url.
+    #    New comment/review = new URL = fires. Timestamp-only bumps leave URL unchanged = skip.
+    #    Falls back to id|updated_at when latest_comment_url is absent (rare).
+    # 3. Everything else: id|updated_at (state_change, ci_activity, etc.)
     local seen_key
     case "$reason" in
-        review_requested|assign|invitation|approval_requested)
+        review_requested|assign|invitation|approval_requested|team_mention|security_alert)
             seen_key="${id}" ;;
+        comment|pull_request_review|author)
+            if [[ -n "$latest_comment_url" ]]; then
+                seen_key="${id}|${latest_comment_url}"
+            else
+                seen_key="${id}|${updated_at}"
+            fi ;;
         *)
             seen_key="${id}|${updated_at}" ;;
     esac
