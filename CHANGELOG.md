@@ -11,6 +11,20 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.0] - 2026-03-20
+
+### Changed
+- Menu bar app event buffer raised from 100 to 500 events in memory.
+- Scroll list shows last 50 events (was 30).
+- Header counter now tracks total events since last Clear, not just the buffer size.
+  The counter keeps climbing even after the 500-event buffer trims older entries.
+
+### Added
+- "Showing last 500" indicator appears when the event buffer is full.
+- README and project docs updated for v1.1.2 dedup fixes, sync behavior, and test suite.
+
+---
+
 ## [1.1.2] - 2026-03-20
 
 ### Fixed
@@ -293,7 +307,8 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ---
 
-[Unreleased]: https://github.com/joryeugene/gitbeacon/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/joryeugene/gitbeacon/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/joryeugene/gitbeacon/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/joryeugene/gitbeacon/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/joryeugene/gitbeacon/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/joryeugene/gitbeacon/compare/v1.0.0...v1.1.0
