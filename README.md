@@ -258,6 +258,17 @@ Change `12%` in the `split-window` command to any percentage or fixed line count
 
 ---
 
+## Development
+
+```bash
+mise install
+git config core.hooksPath .githooks  # optional staged secret scan
+just lint
+bash tests/test-dedup.sh
+```
+
+---
+
 ## Verification
 
 ```bash

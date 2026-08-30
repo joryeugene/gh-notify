@@ -6,15 +6,36 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Scan committed history for secrets
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+          GITLEAKS_ENABLE_SUMMARY: "false"
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+          GITLEAKS_VERSION: "8.30.1"
+
   lint:
+    needs: secret-scan
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
       - run: brew install shellcheck
       - run: shellcheck scripts/gitbeacon-daemon.sh scripts/gitbeacon-bar.sh scripts/demo-scenario.sh install.sh
+      - run: bash tests/test-dedup.sh
 
   build-app:
+    needs: secret-scan
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
